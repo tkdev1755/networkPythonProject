@@ -1,6 +1,7 @@
 #ifndef NETWORKING
 #define NETWORKING
 #define BUFFER_SIZE 1024
+#define MAXCLIENTS 2
 #include <sys/socket.h>
 #include <sys/select.h>
 #include <netinet/in.h>
@@ -10,6 +11,25 @@
 #include <string.h>
 #include <unistd.h>
 #include <errno.h>
+
+
+struct networkStruct {
+    int sockFd;
+    struct sockaddr_in addr;
+    socklen_t addrLen;
+    struct hostent* hostInfo;
+};
+typedef struct networkStruct networkStruct;
+
+typedef struct selectStruct{
+    int masterSocket;
+    int cliList[MAXCLIENTS];
+    int maxSD;
+    int activeSets;
+    fd_set readFds;
+    fd_set writeFds;
+    fd_set errorFds;
+}selectStruct;
 
 typedef struct
 {
@@ -24,6 +44,18 @@ typedef struct
 
 int udpserver(struct sockaddr_in * server_sa, int port, char * ip);
 int udpclient(struct sockaddr_in * server_sa, int port, char * ip);
+
+void initializeCliList(selectStruct* sStruct);
+
+void initializeMasterSocket(selectStruct* sStruct, networkStruct* ntStruct);
+
+int clearFDSets(selectStruct* sStruct);
+
+int updateFDSets(selectStruct* sStruct);
+
+int checkForNewConnection(selectStruct* sStruct);
+
+int disconnectClient(selectStruct* sStruct, int cliSD,int cliPos);
 
 //select
 // int input_timeout(int fd, unsigned int seconds);
