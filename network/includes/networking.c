@@ -101,6 +101,107 @@ int udpserver(struct sockaddr_in *server_sa, int port, char * ip){
     return socketfd;
 }
 
+void initializeCliList(selectStruct* sStruct){
+    for (int i = 0; i<MAXCLIENTS; i++){
+            sStruct->cliList[i] = 0;
+        }
+}
+void initializeMasterSocket(selectStruct* sStruct, networkStruct* ntStruct){
+    sStruct->masterSocket = ntStruct->sockFd;
+}
+int clearFDSets(selectStruct* sStruct){
+    switch (sStruct->activeSets)
+    {
+    case 1:
+        FD_ZERO(&(sStruct->readFds));
+        break;
+    case 2:
+        FD_ZERO(&(sStruct->readFds));
+        FD_ZERO(&(sStruct->writeFds));
+        break;
+    case 3:
+        FD_ZERO(&(sStruct->readFds));
+        FD_ZERO(&(sStruct->writeFds));
+        FD_ZERO(&(sStruct->errorFds));
+        break;
+    default:
+        printf("activeSet value not in range \n");
+        return -1;
+        break;
+    }
+    FD_SET(sStruct->masterSocket, &(sStruct->readFds));
+    sStruct->maxSD = sStruct->masterSocket;
+    return 0;
+}
+
+int updateFDSets(selectStruct* sStruct){
+    printf("Updating maxClients\n");
+
+    for (int i = 0 ; i< MAXCLIENTS; i++){
+            
+            int sd = sStruct->cliList[i]; 
+            if (sd > 0){
+                printf("Found new Socket Descriptor\n");
+                switch (sStruct->activeSets)
+                {
+                case 1:
+                    FD_SET(sd,&(sStruct->readFds));
+                    break;
+                case 2:
+                    FD_SET(sd,&(sStruct->readFds));
+                    FD_SET(sd,&(sStruct->writeFds));
+                    break;
+                case 3:
+                    FD_SET(sd,&(sStruct->readFds));
+                    FD_SET(sd,&(sStruct->writeFds));
+                    FD_SET(sd,&(sStruct->errorFds));
+                    break;
+                default:
+                    printf("Wrong activeSets parameter \n");
+                    return -1;
+                    break;
+                }
+            }
+            if (sd > sStruct->maxSD){
+                printf("Max fd is updated\n");
+                sStruct->maxSD = sd;
+            }
+    }
+    return 0;
+}
+
+int checkForNewConnection(selectStruct* sStruct){
+    int cliFD = 0;
+    struct sockaddr_in cliAddr;
+    socklen_t cliLen;
+    if (FD_ISSET(sStruct->masterSocket, &(sStruct->readFds))){
+            printf("read activity on Master socket\n"); 
+            if ((cliFD = accept(sStruct->masterSocket, (struct sockaddr*) &cliAddr,&cliLen))<0){
+                return -1;
+            }
+            for (int i = 0; i<MAXCLIENTS; i++){
+                if (sStruct->cliList[i] == 0){
+                    sStruct->cliList[i] = cliFD;
+                    printf("Added new client to fdList at position %d\n", i);
+                    i = MAXCLIENTS;
+                    sStruct->maxSD = sStruct->maxSD>cliFD ? sStruct->maxSD : cliFD;
+                }
+            }
+            
+            printf("====== !!! New client connected : Sockfd %d, ip is %s, port is %d====== !!!\n", cliFD, inet_ntoa(cliAddr.sin_addr),ntohs(cliAddr.sin_port));
+    }
+    return 0;
+}
+
+int disconnectClient(selectStruct* sStruct, int cliSD, int cliPos){
+    printf("Disconnecting client \n");
+    if (close(cliSD) < 0){
+        return -1;
+    }
+    sStruct->cliList[cliPos] = 0;
+    return 0;
+}
+
 
 // int input_timeout(int fd, unsigned int seconds){
 //     fd_set fdset;
