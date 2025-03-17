@@ -115,7 +115,7 @@ int checkForNewConnection(selectStruct* sStruct){
                     sStruct->maxSD = sStruct->maxSD>cliFD ? sStruct->maxSD : cliFD;
                 }
             }
-            
+
             printf("====== !!! New client connected : Sockfd %d, ip is %s, port is %d====== !!!\n", cliFD, inet_ntoa(cliAddr.sin_addr),ntohs(cliAddr.sin_port));
     }
     return 0;
