@@ -1,7 +1,9 @@
 #include "includes/networking.h"
 #define MAXLINE 2048
 
-
+int sendToProgram(){
+    return 0;
+}
 
 int clientMode(char* ip, int port){
     struct sockaddr_in *clientSocket;
@@ -13,7 +15,10 @@ int clientMode(char* ip, int port){
     socklen_t cliLen = 0;
     while (1){
         int rcvFromResult = recvfrom(fd, data,MAXLINE, MSG_DONTWAIT, (struct sockaddr*) &cliAddr, &cliLen);
-        if (rcvFromResult > 0 || errno == EAGAIN){
+        if (rcvFromResult > 0 && errno == EAGAIN){
+            sendToProgram();
+        }
+        else{
             stop("Error while reading message");
         }
     }
