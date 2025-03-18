@@ -64,14 +64,15 @@ int main(int argc, char *argv[]){
     int programBytes = 0;
     char cliMSG[BUFFER_SIZE+1];
     char programMSG[BUFFER_SIZE+1];
-
-    
+    networkStruct serverSocket;
+    networkStruct programSocket = initializeProgramSocket();
     if (argc > 3){
         printf("%s\n", argv[1]);
         char argument = argv[1];
         switch(argument){
             case 'n':
                 /* initiate a game */
+                serverSocket = createGame();
                 break;
             case 'j':
                 /*joinning a game */
@@ -81,8 +82,6 @@ int main(int argc, char *argv[]){
         }
     }
 
-    networkStruct programSocket = initializeProgramSocket();
-    networkStruct serverSocket = initializeListenSocket();
     while (1){
         //Attente d'une commande de la part d'un autre client;
         clientBytes = recvfrom(serverSocket.sockFd, cliMSG, BUFFER_SIZE-1, MSG_DONTWAIT, (struct sockaddr *) &client_sa, &len);
@@ -94,13 +93,13 @@ int main(int argc, char *argv[]){
         else if (clientBytes > 0){
             // clientStatus = 2; // indique que le client à écrit dans la socket
             // programBytes = ;
-            if (sendto(programSocket.sockFd, cliMSG, BUFFER_SIZE-1, MSG_DONTWAIT, (struct sockaddr *) &programSocket.addr, programSocket.addrLen) < 0){
+            if (sendto(programSocket.sockFd, cliMSG, BUFFER_SIZE-1, MSG_DONTWAIT, (struct sockaddr *) &programSocket.sock_addr, programSocket.addrLen) < 0){
                 stop("Error while sending data to python program");
             }
             bzero(cliMSG, BUFFER_SIZE + 1);
         }
         // Gestion de la réception de commandes de la part du programme python
-        programBytes = recvfrom(programSocket.sockFd, programMSG,BUFFER_SIZE-1,MSG_DONTWAIT, (struct sockaddr *)&programSocket.addr,&programSocket.addrLen);
+        programBytes = recvfrom(programSocket.sockFd, programMSG,BUFFER_SIZE-1,MSG_DONTWAIT, (struct sockaddr *)&programSocket.sock_addr,&programSocket.addrLen);
         if (programBytes < 0 && errno != EAGAIN){
             stop("error while recieving data from program");
         }

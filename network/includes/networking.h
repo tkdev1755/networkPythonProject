@@ -20,7 +20,7 @@
 
 struct networkStruct {
     int sockFd;
-    struct sockaddr_in addr;
+    struct sockaddr_in sock_addr;
     socklen_t addrLen;
     struct hostent* hostInfo;
 };
@@ -52,7 +52,6 @@ int udpclient(struct sockaddr_in * server_sa, int port, char * ip);
 char * getip(const char * interface);
 
 
-
 void initializeCliList(selectStruct* sStruct);
 
 void initializeMasterSocket(selectStruct* sStruct, networkStruct* ntStruct);
@@ -67,6 +66,7 @@ int disconnectClient(selectStruct* sStruct, int cliSD,int cliPos);
 
 networkStruct initializeListenSocket();
 networkStruct initializeProgramSocket();
+networkStruct createGame();
 int initializeProgramConnection();
 
 //select
