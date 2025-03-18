@@ -15,18 +15,6 @@ if (socketfd < 0) {
     stop("Échec de la création du serveur UDP");
 }
 
-memset(&servaddr, 0, sizeof(servaddr));
-servaddr.sin_addr.s_addr = inet_addr(ADDR_IP);
-servaddr.sin_family = AF_INET;
-servaddr.sin_port = htons(SERVER_PORT);
-socklen_t servlen = sizeof(servaddr);
-
-if (bind(sock_fd, (const struct sockadrr_in *)&servaddr, &servlen) < 0) {
-    perror("Erreur lors du bind");
-    exit(EXIT_FAILURE);
-}
-
-
 printf("Serveur UDP démarré. En attente de messages...\n");
 
 
