@@ -23,19 +23,11 @@ else :
 
 """
 
-    #pas thread non blockan
-
-UDP_IP_NOT_ME = "192.168.128.254" #192.168.128.254
+UDP_IP_MAX = "192.168.128.250" #192.168.128.254
 UDP_PORT = 5005
-UDP_IP_ME = "192.168.128.250" #192.168.128.250
-
+UDP_IP_ETAN = "192.168.128.254" #192.168.128.250
 
 #MESSAGE = b"Hello, World!"
-sock = socket.socket(socket.AF_INET, # Internet
-                      socket.SOCK_DGRAM) # UDP
-
-sock.bind((UDP_IP_ME,UDP_PORT))
-sock.setblocking(0) #socket non bloquante
 
 global compteur
 compteur = 0
@@ -60,58 +52,62 @@ def get_file_size(file_path):
     """Retourne la taille du fichier en octets."""
     if os.path.exists(file_path):
         size = os.path.getsize(file_path)
-        print(f"Taille du fichier '{file_path}': {size} octets")
+        #print(f"Taille du fichier '{file_path}': {size} octets")
         return size
     else:
         print("Le fichier n'existe pas.")
         return None
     
-# LANCEMENT PROGRAMME C
+# ENVOI DE LA REQUETE DE CONNEXION AU CREATEUR DE LA PARTIE
+"""
+try:
+    subprocess.run(["./network/networkEngine", "j"], check=True)
+except FileNotFoundError:
+    print("Erreur : 'networkEngine' introuvable.")
+except subprocess.CalledProcessError as e:
+    print(f"Erreur lors de l'exécution de 'networkEngine' : {e}")
+"""
+request = 0
+while not(request) : 
+    UDP_IP_ETAN = input("Entrez l'IP du créateur de la partie:")
 
-#subprocess.run(["./network/networkEngine", "n"])
+    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    sock.bind((UDP_IP_MAX,UDP_PORT))
+    sock.setblocking(0) #socket non bloquante
 
-
-start = 0
-while not(start) : 
     try:
-            data, addr = sock.recvfrom(1024)
-            global cPort 
-            cPort = addr[1]
-            print("received message: %s" % data)
-            print(addr)
-            fun,ip,port = decoupe(data.decode('utf-8'))
-            
-            if fun == "CONNECT" :
-                start = 1
-
+        #sock.sendto(b"coucou", (UDP_IP_ETAN, UDP_PORT))
+        sock.sendto(bytes(f"CONNECT;{UDP_IP_MAX};{UDP_PORT}",'utf-8'), (UDP_IP_ETAN, UDP_PORT))
+        request = 1
     except BlockingIOError:
         pass
 
-# Envoie size tab au prog c
-
-file = open('save','wb')
-pickle.dump(tab,file)
-file.close
-
-file = open('save','rb')
-message = file.read(get_file_size('save'))
-sock.sendto(message,(UDP_IP_NOT_ME, UDP_PORT)) #cPort
-
-
-# attendre de recevoir le GAME_STARTED
-
-start = 0
-while not(start) : 
+    '''
     try:
             data, addr = sock.recvfrom(1024)
             print("received message: %s" % data)
             fun,ip,port = decoupe(data.decode('utf-8'))
-            
-            if fun == "START_GAME" :
+            if fun == "CONNECT" :
                 start = 1
-                sock.sendto(bytes(f"GAME_STARTED;;",'utf-8'), (UDP_IP_NOT_ME,  UDP_PORT)) #cPort
+    except BlockingIOError:
+        pass'''
+    
+# RECEVOIR LE FICHIER CONTENANT LE MONDE
 
+receive = 0
+while not(receive) : 
+    try:
+            message = sock.recvfrom(1024)
+            print("received message: %s" % message)
 
+            try:
+                fun,ip,port = decoupe(message.decode('utf-8'))
+            except:
+                fun = "ERROR"
+
+            if fun == "START_GAME" :
+                receive = 1
+                sock.sendto(bytes(f"GAME_STARTED;;",'utf-8'), (UDP_IP_ETAN, UDP_PORT))
 
     except BlockingIOError:
         pass

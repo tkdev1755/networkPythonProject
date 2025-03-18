@@ -25,16 +25,15 @@ else :
 
     #pas thread non blockan
 
-UDP_IP_NOT_ME = "192.168.128.254" #192.168.128.254
+UDP_IP = "127.0.0.1" #192.168.128.254
 UDP_PORT = 5005
-UDP_IP_ME = "192.168.128.250" #192.168.128.250
 
 
 #MESSAGE = b"Hello, World!"
 sock = socket.socket(socket.AF_INET, # Internet
                       socket.SOCK_DGRAM) # UDP
 
-sock.bind((UDP_IP_ME,UDP_PORT))
+sock.bind((UDP_IP,UDP_PORT))
 sock.setblocking(0) #socket non bloquante
 
 global compteur
@@ -93,9 +92,8 @@ file = open('save','wb')
 pickle.dump(tab,file)
 file.close
 
-file = open('save','rb')
-message = file.read(get_file_size('save'))
-sock.sendto(message,(UDP_IP_NOT_ME, UDP_PORT)) #cPort
+message = get_file_size('save')
+sock.sendto(message,(UDP_IP, cPort)) #cPort
 
 
 # attendre de recevoir le GAME_STARTED
@@ -109,7 +107,7 @@ while not(start) :
             
             if fun == "START_GAME" :
                 start = 1
-                sock.sendto(bytes(f"GAME_STARTED;;",'utf-8'), (UDP_IP_NOT_ME,  UDP_PORT)) #cPort
+                sock.sendto(bytes(f"GAME_STARTED;;",'utf-8'), (UDP_IP,  cPort)) #cPort
 
 
 
