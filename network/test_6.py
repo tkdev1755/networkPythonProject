@@ -39,8 +39,11 @@ while True:
         received_data = pickle.loads(data)
         print("Received message:", received_data)
 
-        if received_data[0] == "deplacer":
-            deplacer(int(received_data[1]))
+        try:
+            if received_data[0] == "deplacer":
+                deplacer(int(received_data[1]))
+        except IndexError:
+            print("message not indexable")
 
     except BlockingIOError:
         pass
@@ -49,3 +52,7 @@ while True:
     count+=1
     print(tab)
     time.sleep(1)
+
+
+'''lancer networkengine en -j 
+subprocess '''
