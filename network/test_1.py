@@ -29,6 +29,7 @@ UDP_IP_NOT_ME = "192.168.128.254" #192.168.128.254
 UDP_PORT = 5005
 UDP_IP_ME = "192.168.128.250" #192.168.128.250
 
+
 #MESSAGE = b"Hello, World!"
 sock = socket.socket(socket.AF_INET, # Internet
                       socket.SOCK_DGRAM) # UDP
@@ -59,7 +60,7 @@ def get_file_size(file_path):
     """Retourne la taille du fichier en octets."""
     if os.path.exists(file_path):
         size = os.path.getsize(file_path)
-        #print(f"Taille du fichier '{file_path}': {size} octets")
+        print(f"Taille du fichier '{file_path}': {size} octets")
         return size
     else:
         print("Le fichier n'existe pas.")
@@ -67,12 +68,15 @@ def get_file_size(file_path):
     
 # LANCEMENT PROGRAMME C
 
-subprocess.run(["./networkEngine", "n"])
+subprocess.run(["./network/networkEngine", "n"])
 start = 0
 while not(start) : 
     try:
             data, addr = sock.recvfrom(1024)
+            global cPort 
+            cPort = addr[1]
             print("received message: %s" % data)
+            print(addr)
             fun,ip,port = decoupe(data.decode('utf-8'))
             
             if fun == "CONNECT" :
@@ -81,16 +85,17 @@ while not(start) :
     except BlockingIOError:
         pass
 
-# Envoie Tab
+# Envoie size tab au prog c
 
 file = open('save','wb')
 pickle.dump(tab,file)
 file.close
 
-file = open('save','rb')
-message = file.read(get_file_size('save'))
-sock.sendto(message,(UDP_IP_NOT_ME, UDP_PORT))
+message = get_file_size('save')
+sock.sendto(message,(UDP_IP_NOT_ME, UDP_PORT)) #cPort
 
+
+# attendre de recevoir le GAME_STARTED
 
 start = 0
 while not(start) : 
@@ -101,7 +106,7 @@ while not(start) :
             
             if fun == "START_GAME" :
                 start = 1
-                sock.sendto(bytes(f"GAME_STARTED;;",'utf-8'), (UDP_IP_NOT_ME, UDP_PORT))
+                sock.sendto(bytes(f"GAME_STARTED;;",'utf-8'), (UDP_IP_NOT_ME,  UDP_PORT)) #cPort
 
 
 
