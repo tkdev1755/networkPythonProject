@@ -21,8 +21,7 @@ int main() {
         char buffer[BUFFER_SIZE + 1];
         int recvLen = recvfrom(socketfd, buffer, BUFFER_SIZE, 0, (struct sockaddr *)&client_sa, &client_len);
         if (recvLen < 0) {
-            perror("Erreur lors de la réception des données");
-            continue;
+            stop("packet non transmis");
         }
 
         buffer[recvLen] = '\0';
