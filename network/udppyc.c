@@ -3,6 +3,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+/*udp Python -> C*/
+
 int main() {
     struct sockaddr_in server_sa;
     int socketfd;
