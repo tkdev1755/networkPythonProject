@@ -6,6 +6,7 @@
 #define SERVER_IP "127.0.0.1"
 #define SERVER_PORT 5005
 
+/*le code pour le transfert UDP de l'evenement réseau de la partie Python vers C*/
 
 struct sockaddr_in server_sa;
 int socketfd;
