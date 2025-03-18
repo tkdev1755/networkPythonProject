@@ -12,67 +12,16 @@ void closeAll(int *tab, int number_of_socket){
     }
 }
 
-// int tcpserver(struct sockaddr_in * server_sa, int port, char * ip, struct linger* so_linger_opt){
-    
-//     int socketfd = socket(AF_INET, SOCK_STREAM, 0);
-//     int option = 1;
-//     if(socketfd < 0){
-//         stop("Socket creation failed !");
-//     }
-//     so_linger_opt->l_onoff = 1;  // Activer SO_LINGER
-//     so_linger_opt->l_linger = 0; // Temps de délai = 0 secondes
-//     if(setsockopt(socketfd, SOL_SOCKET, SO_LINGER, so_linger_opt, sizeof(struct linger)) < 0){
-//         close(socketfd);
-//         stop("Setting options failed !");
-//     }
-//     if(setsockopt(socketfd, SOL_SOCKET, SO_REUSEADDR, (char *)&option, sizeof(option)) < 0){
-//         close(socketfd);
-//         stop("Setting options failed !");
-//     }
-//     bzero(server_sa, sizeof(struct sockaddr_in));
-//     server_sa->sin_family = AF_INET;
-//     server_sa->sin_port = htons(port);
-//     server_sa->sin_addr.s_addr = (strncmp(ip, "any", 3) == 0) ? INADDR_ANY : inet_addr(ip);
-
-
-//     if(bind(socketfd, (struct sockaddr *)server_sa, sizeof(struct sockaddr)) < 0){
-//         close(socketfd);  
-//         stop("Binding failed !");
-//     }
-//     return socketfd;
-// }
-
-// int tcpclient(struct sockaddr_in * server_sa, int port, char * ip, struct linger* so_linger_opt){
-//     int socketfd = socket(AF_INET, SOCK_STREAM, 0);
-//     if(socketfd < 0){
-//         stop("Socket creation failed !");
-//     }
-
-//     so_linger_opt->l_onoff = 1;  // Activer SO_LINGER
-//     so_linger_opt->l_linger = 0; // Temps de délai = 0 secondes
-//     if(setsockopt(socketfd, SOL_SOCKET, SO_LINGER, so_linger_opt, sizeof(struct linger)) < 0){
-//         close(socketfd);
-//         stop("Setting options failed !");
-//     }
-
-//     bzero(server_sa, sizeof(struct sockaddr_in));
-//     server_sa->sin_family = AF_INET;
-//     server_sa->sin_port = htons(port);
-//     server_sa->sin_addr.s_addr = inet_addr(ip);
-
-//     if(connect(socketfd,(struct sockaddr *)server_sa, sizeof(struct sockaddr)) < 0){
-//         close(socketfd);
-//         stop("Connection failed !");
-//     }
-//     return socketfd;
-// }
-
-
 int udpclient(struct sockaddr_in *server_sa, int port, char * ip){
     int socketfd = socket(AF_INET, SOCK_DGRAM, 0);
     if(socketfd < 0){
         stop("Socket creation failed !");
     }
+
+    if(ip == NULL){
+        stop("IP adress is null !");
+    }
+
     bzero(server_sa, sizeof(struct sockaddr_in));
     server_sa->sin_family = AF_INET;
     server_sa->sin_port = htons(port);
@@ -86,7 +35,11 @@ int udpserver(struct sockaddr_in *server_sa, int port, char * ip){
     if(socketfd < 0){
         stop("Socket creation failed !");
     }
-    // printf("%d\n",socketfd);
+
+    if(ip == NULL){
+        stop("IP adress is null !");
+    }
+
     bzero(server_sa, sizeof(struct sockaddr_in));
     server_sa->sin_family = AF_INET;
     server_sa->sin_port = htons(port);
@@ -94,12 +47,38 @@ int udpserver(struct sockaddr_in *server_sa, int port, char * ip){
 
     if(bind(socketfd, (struct sockaddr *)server_sa, sizeof(struct sockaddr)) < 0){
         close(socketfd);
-        perror("Binding failed : ");
         stop("Binding failed !");
     }
     
     return socketfd;
 }
+
+char * getip(const char * interface){
+    struct ifaddrs *ifaddr, *ifa;
+    static char ip[INET_ADDRSTRLEN];
+
+    // gathering @ip
+    if (getifaddrs(&ifaddr) == -1) {
+        perror("getifaddrs");
+        return NULL;
+    }
+    
+    // browse all interfaces
+    for (ifa = ifaddr; ifa != NULL; ifa = ifa->ifa_next) {
+        if (ifa->ifa_addr == NULL) continue;
+
+        if (ifa->ifa_addr->sa_family == AF_INET && strcmp(ifa->ifa_name, interface) == 0) {
+            struct sockaddr_in *sa = (struct sockaddr_in *)ifa->ifa_addr;
+            inet_ntop(AF_INET, &(sa->sin_addr), ip, INET_ADDRSTRLEN);
+            freeifaddrs(ifaddr);
+            return ip;
+        }
+    }
+
+    freeifaddrs(ifaddr);
+    return NULL;  // interface not found
+}
+
 
 void initializeCliList(selectStruct* sStruct){
     for (int i = 0; i<MAXCLIENTS; i++){

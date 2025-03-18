@@ -6,12 +6,13 @@
 #include <sys/select.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <ifaddrs.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 #include <errno.h>
-
+#include <sys/types.h>
 
 struct networkStruct {
     int sockFd;
@@ -44,6 +45,7 @@ typedef struct
 
 int udpserver(struct sockaddr_in * server_sa, int port, char * ip);
 int udpclient(struct sockaddr_in * server_sa, int port, char * ip);
+char * getip(const char * interface);
 
 void initializeCliList(selectStruct* sStruct);
 
