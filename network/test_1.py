@@ -25,9 +25,9 @@ else :
 
     #pas thread non blockan
 
-UDP_IP_NOT_ME = "192.168.128.254" #192.168.128.254
+UDP_IP_NOT_ME = "192.168.128.250" #192.168.128.254
 UDP_PORT = 5005
-UDP_IP_ME = "192.168.128.250" #192.168.128.250
+UDP_IP_ME = "192.168.128.254" #192.168.128.250
 
 
 #MESSAGE = b"Hello, World!"
@@ -68,7 +68,9 @@ def get_file_size(file_path):
     
 # LANCEMENT PROGRAMME C
 
-subprocess.run(["./network/networkEngine", "n"])
+#subprocess.run(["./network/networkEngine", "n"])
+
+
 start = 0
 while not(start) : 
     try:
@@ -91,7 +93,8 @@ file = open('save','wb')
 pickle.dump(tab,file)
 file.close
 
-message = get_file_size('save')
+file = open('save','rb')
+message = file.read(get_file_size('save'))
 sock.sendto(message,(UDP_IP_NOT_ME, UDP_PORT)) #cPort
 
 
