@@ -1,5 +1,4 @@
 #include "includes/networking.h"
-#define MAXLINE 2048
 
 
 /*
@@ -52,164 +51,65 @@
         Si nous avons plus d'une instance voulant rejoindre le jeu, devons-nous lancer la partie et accepter les arrivées de nouveau joueurs à la volée, ou faire un mode "attente" pour connecter tout les clients puis lancer la partie ?
 
 */
-int sendToProgram(){
-    return 0;
-}
 
 
-networkStruct initializeListenSocket(){
-    networkStruct ntStruct;
-    bzero(&(ntStruct.addr), sizeof(struct sockaddr_in));
-    ntStruct.sockFd = 0;
-    struct sockaddr_in server_sa;
-    char *ip = getip("eth0");
-    socklen_t len = sizeof(server_sa);
-    bzero(&server_sa, sizeof(struct sockaddr_in));
-    int udpserverfd = udpserver(&server_sa, SERVERPORT, ip);
-    ntStruct.addr = server_sa;
-    ntStruct.sockFd = udpserverfd;    
-    return ntStruct;
-}
-
-networkStruct initializeProgramSocket(){
-    networkStruct ntStruct;
-    bzero(&(ntStruct.addr), sizeof(struct sockaddr_in));
-    struct sockaddr_in program_sa; 
-    socklen_t len = sizeof(program_sa);
-    ntStruct.addr = program_sa;
-    ntStruct.sockFd = udpclient(&program_sa,PROGRAM_PORT,PROGRAM_IP);
-    return ntStruct;
-}
-
-int initializeProgramConnection(){
-    // Insérer ici le code d'initialisation de la communication avec le programme python
-    
-}
-int clientMode(char* ip, int port){
-    struct sockaddr_in *clientSocket;
-
-    int fd = udpclient(clientSocket, port, ip);
-    char* data = calloc(MAXLINE, sizeof(char));
-    int rcvFromResult = 0;
-    struct sockaddr_in cliAddr;
-    socklen_t cliLen = 0;
-    while (1){
-        int rcvFromResult = recvfrom(fd, data,MAXLINE, MSG_DONTWAIT, (struct sockaddr*) &cliAddr, &cliLen);
-        if (rcvFromResult > 0 && errno == EAGAIN){
-            sendToProgram();
-        }
-        else{
-            stop("Error while reading message");
-        }
-    }
-    return 0;
-}
 
 
 int main(int argc, char *argv[]){
-    fd_set readfds;
-    int bytes_recu = 0, selectfd;
     char *ip = getip("eth0"); //ip of my eth0 interface
-    char msg_to_send[BUFFER_SIZE + 1];
-    char received_msg[BUFFER_SIZE + 1];
-    struct sockaddr_in server_sa, client_sa, localhost_sa;
+    struct sockaddr_in client_sa, localhost_sa;
     socklen_t len = sizeof(client_sa);
-    struct timeval timeout;
-    timeout.tv_sec = 10;
-    timeout.tv_usec = 0;
-
-    bzero(&client_sa, sizeof(struct sockaddr_in));
-    bzero(msg_to_send, BUFFER_SIZE + 1);
-    bzero(received_msg, BUFFER_SIZE + 1);
-
-    int udpserverfd = udpserver(&server_sa, 8000, ip);
-    
-    localhost_sa.sin_family = AF_INET;
-    localhost_sa.sin_port = htons(5500);
-    localhost_sa.sin_addr.s_addr = inet_addr("127.0.0.1");
+    int clientBytes = 0;
+    // int clientStatus = 0; // Représente si le client est en train de transmettre des bytes ou en train d'en recevoir, n'est pas utilisé pour le moment 
+    int programBytes = 0;
+    char cliMSG[BUFFER_SIZE+1];
+    char programMSG[BUFFER_SIZE+1];
 
     
-
-    while (1){
-        
-        FD_ZERO(&readfds);
-        FD_SET(udpserverfd, &readfds);
-        
-        selectfd = select(udpserverfd + 1, &readfds, NULL, NULL, &timeout);
-        if (selectfd == -1) {
-            close(udpserverfd);
-            stop("Select error : ");
-        } else if (selectfd) {
-            if (FD_ISSET(udpserverfd, &readfds)) {
-                if(bytes_recu = recvfrom(udpserverfd, received_msg, BUFFER_SIZE - 1, MSG_DONTWAIT, (struct sockaddr *) &client_sa, sizeof(client_sa)) < 0 && errno != EAGAIN){
-                    close(udpserverfd);
-                    stop("Reception error : ");
-                }else{
-                    //if it is from the other server, send it to the other socket to send it to the python program
-                    if (strcmp(inet_ntoa(client_sa.sin_addr), "127.0.0.1") != 0){
-                        if ((sendto(udpserverfd, received_msg, bytes_recu, 0, (struct sockaddr *)&localhost_sa, sizeof(localhost_sa))) < 0) {
-                            close(udpserverfd);
-                            stop("Sending to python program failed : ");
-                        }
-                    }
-                    else{
-                        /*
-                        We have to set the client sockaddr first, so we have to discuss how to get the other player ip adress and port to set it. Let do it this afternoon !
-                        */
-                        if ((sendto(udpserverfd, received_msg, bytes_recu, 0, (struct sockaddr *)&client_sa, sizeof(client_sa))) < 0) {
-                            close(udpserverfd);
-                            stop("Sending to the server failed : ");
-                        }
-                    }
-                }
-            }  
-        }
-    }
-
-    // New initialization code
     if (argc > 3){
-        // future gestion des arguments
+        printf("%s\n", argv[1]);
+        char argument = argv[1];
+        switch(argument){
+            case 'n':
+                /* initiate a game */
+                break;
+            case 'j':
+                /*joinning a game */
+                break;
+            default:
+                break;
+        }
     }
 
     networkStruct programSocket = initializeProgramSocket();
     networkStruct serverSocket = initializeListenSocket();
-    int clientBytes = 0;
-    int clientStatus = 0; // Représente si le client est en train de transmettre des bytes ou en train d'en recevoir, n'est pas utilisé pour le moment 
-    int programBytes = 0;
-    char* cliMSG[BUFFER_SIZE+1];
-    char  programMSG[BUFFER_SIZE+1];
     while (1){
         //Attente d'une commande de la part d'un autre client;
-        clientBytes = recvfrom(serverSocket.sockFd, cliMSG,BUFFER_SIZE-1,MSG_DONTWAIT,&client_sa,&len);
-        programBytes = recvfrom(programSocket.sockFd, programMSG,BUFFER_SIZE-1,MSG_DONTWAIT,&programSocket.addr,&programSocket.addrLen);
+        clientBytes = recvfrom(serverSocket.sockFd, cliMSG, BUFFER_SIZE-1, MSG_DONTWAIT, (struct sockaddr *) &client_sa, &len);
+        
         // Gestion de la reception d'une commande de la part d'une autre instance
         if (clientBytes < 0 && errno != EAGAIN){
             stop("error while recieving data from client");
         }
         else if (clientBytes > 0){
-            clientStatus = 2; // indique que le client à écrit dans la socket
-            programBytes = sendto(programSocket.sockFd, cliMSG, BUFFER_SIZE-1, MSG_DONTWAIT,&programSocket.addr, programSocket.addrLen);
-            if (programBytes < 0 || errno != EAGAIN){
+            // clientStatus = 2; // indique que le client à écrit dans la socket
+            // programBytes = ;
+            if (sendto(programSocket.sockFd, cliMSG, BUFFER_SIZE-1, MSG_DONTWAIT, (struct sockaddr *) &programSocket.addr, programSocket.addrLen) < 0){
                 stop("Error while sending data to python program");
             }
-            if (programBytes > 0){
-                bzero(cliMSG, BUFFER_SIZE+1);
-                programBytes = 0;
-            }
+            bzero(cliMSG, BUFFER_SIZE + 1);
         }
         // Gestion de la réception de commandes de la part du programme python
+        programBytes = recvfrom(programSocket.sockFd, programMSG,BUFFER_SIZE-1,MSG_DONTWAIT, (struct sockaddr *)&programSocket.addr,&programSocket.addrLen);
         if (programBytes < 0 && errno != EAGAIN){
             stop("error while recieving data from program");
         }
-        else if (programBytes > 0){
-            clientBytes = sendto(serverSocket.sockFd, programMSG, BUFFER_SIZE-1, MSG_DONTWAIT,&client_sa, len);
-            clientStatus = 1;
-            if (clientBytes < 0 || errno != EAGAIN){
+        else{
+            // clientStatus = 1;
+            if (sendto(serverSocket.sockFd, programMSG, BUFFER_SIZE-1, 0, (struct sockaddr *)&client_sa, len)){
                 stop("Error while sending data to instance");
             }
-            if (clientBytes > 0){
-                clientBytes = 0;
-            }
+            bzero(programMSG, BUFFER_SIZE + 1);
         }
     }
     return EXIT_SUCCESS;

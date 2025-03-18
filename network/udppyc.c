@@ -1,9 +1,4 @@
-<<<<<<< HEAD:network/test_2.c
-#include <winsock2.h>
-#include "networking.h"
-=======
 #include "includes/networking.h"
->>>>>>> fe074193fa04b241ddf270d271df267210cc22d7:network/udppyc.c
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -11,7 +6,6 @@
 #define SERVER_IP "127.0.0.1"
 #define SERVER_PORT 5005
 
-/*le code pour le transfert UDP de l'evenement réseau de la partie Python vers C*/
 
 struct sockaddr_in server_sa;
 int socketfd;

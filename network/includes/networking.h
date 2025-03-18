@@ -2,9 +2,10 @@
 #define NETWORKING
 #define BUFFER_SIZE 1024
 #define MAXCLIENTS 2
-#define PROGRAM_PORT 5500
+#define LOCALHOSTPORT 5005
 #define SERVERPORT 8000
-#define PROGRAM_IP "127.0.0.1"
+#define MAXLINE 2048
+#define LOCALHOSTIP "127.0.0.1"
 #include <sys/socket.h>
 #include <sys/select.h>
 #include <netinet/in.h>
@@ -63,6 +64,10 @@ int updateFDSets(selectStruct* sStruct);
 int checkForNewConnection(selectStruct* sStruct);
 
 int disconnectClient(selectStruct* sStruct, int cliSD,int cliPos);
+
+networkStruct initializeListenSocket();
+networkStruct initializeProgramSocket();
+int initializeProgramConnection();
 
 //select
 // int input_timeout(int fd, unsigned int seconds);
