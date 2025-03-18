@@ -2,6 +2,9 @@
 #define NETWORKING
 #define BUFFER_SIZE 1024
 #define MAXCLIENTS 2
+#define PROGRAM_PORT 5500
+#define SERVERPORT 8000
+#define PROGRAM_IP "127.0.0.1"
 #include <sys/socket.h>
 #include <sys/select.h>
 #include <netinet/in.h>
@@ -46,6 +49,8 @@ typedef struct
 int udpserver(struct sockaddr_in * server_sa, int port, char * ip);
 int udpclient(struct sockaddr_in * server_sa, int port, char * ip);
 char * getip(const char * interface);
+
+
 
 void initializeCliList(selectStruct* sStruct);
 
