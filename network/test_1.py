@@ -25,9 +25,9 @@ else :
 
     #pas thread non blockan
 
-UDP_IP_NOT_ME = "192.168.128.254" #192.168.128.254
+UDP_IP_NOT_ME = "192.168.128.250" #192.168.128.254
 UDP_PORT = 5005
-UDP_IP_ME = "192.168.128.250" #192.168.128.250
+UDP_IP_ME = "192.168.128.254" #192.168.128.250
 
 
 #MESSAGE = b"Hello, World!"
@@ -117,7 +117,7 @@ while not(start) :
         pass
 
 
-"""
+
 while True :
     time.sleep(1)
     i = tab.index(1)
@@ -144,4 +144,3 @@ print("UDP target port: %s" % UDP_PORT)
 print("message: %s" % MESSAGE)
 
 
-"""
