@@ -6,6 +6,8 @@
 #define PYTHON_IP "127.0.0.1"
 #define PYTHON_PORT 5005
 
+/*le code pour le transfert UDP de l'evenement réseau de la partie C vers Python*/
+
 struct sockaddr_in python_sa;
 int socketfd;
 
