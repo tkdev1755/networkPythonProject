@@ -23,7 +23,7 @@ else :
 
 """
 
-UDP_IP_MAX = "192.168.128.254" #192.168.128.254
+UDP_IP_MAX = "192.168.128.250" #192.168.128.254
 UDP_PORT = 5005
 UDP_IP_ETAN = "192.168.128.250" #192.168.128.250
 
@@ -31,7 +31,6 @@ UDP_IP_ETAN = "192.168.128.250" #192.168.128.250
 
 global compteur
 compteur = 0
-tab = [1,0,0,0]
 
 def ajouter(i):
     global compteur
@@ -41,12 +40,13 @@ def decoupe(string):
     return string.split(";")
 
 def deplacer(i): 
+    global message
     if i+1 >3 :
-        tab[i] = 0
-        tab[0] = 1
+        message[i] = 0
+        message[0] = 1
     else :
-        tab[i] = 0 
-        tab[i+1] = 1
+        message[i] = 0 
+        message[i+1] = 1
 
 def get_file_size(file_path):
     """Retourne la taille du fichier en octets."""
@@ -68,7 +68,7 @@ except subprocess.CalledProcessError as e:
     print(f"Erreur lors de l'exécution de 'networkEngine' : {e}")
 """
 request = 0
-while not(request) : 
+while not(request) :
     UDP_IP_ETAN = input("Entrez l'IP du créateur de la partie:")
 
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -95,50 +95,71 @@ while not(request) :
 # RECEVOIR LE FICHIER CONTENANT LE MONDE
 
 receive = 0
+message = ""
 while not(receive) : 
     try:
-            message = sock.recvfrom(1024)
-            received_data = pickle.loads(message)
+            data,addr = sock.recvfrom(1024)
+            message = pickle.loads(data)
             print("received message: %s" % message)
-
-            try:
-                fun,ip,port = decoupe(message.decode('utf-8'))
-            except:
-                fun = "ERROR"
-
-            if fun == "START_GAME" :
+            if message:
                 receive = 1
-                sock.sendto(bytes(f"GAME_STARTED;;",'utf-8'), (UDP_IP_ETAN, UDP_PORT))
+
+            sock.sendto(bytes(f"START_GAME;;",'utf-8'), (UDP_IP_ETAN, UDP_PORT))
+
+    except BlockingIOError:
+        pass
+
+#ATTENDRE LE GAME_STARTED
+
+start = 0
+while not(start) : 
+    try:
+            data, addr = sock.recvfrom(1024)
+            print("received message: %s" % data)
+            fun,ip,port = decoupe(data.decode('utf-8'))
+            
+            if fun == "GAME_STARTED" :
+                start = 1
+                print("Game started!! apatsu apatsu")
 
     except BlockingIOError:
         pass
 
 
-"""
-while True :
-    time.sleep(1)
-    i = tab.index(1)
-    deplacer(i)
-    print(tab)
-    sock.sendto(bytes(f"deplacer;{i}",'utf-8'), (UDP_IP_NOT_ME, UDP_PORT))
+count=0
+while True:
+    sock.sendto(b"ajouter;1", (UDP_IP_ETAN, UDP_PORT))
 
     try:
-        data, addr = sock.recvfrom(1024)
+        '''data, addr = sock.recvfrom(1024)
         print("received message: %s" % data)
         fun,val = decoupe(data.decode('utf-8'))
         
-        if fun == "ajouter" and val.isdigit():
-            ajouter(int(val))
+        if fun == "deplacer" and val.isdigit():
+            deplacer(int(val))'''
 
+        data, addr = sock.recvfrom(1024)
+        try:
+            data = pickle.loads(data)
+        except:
+            pass
+        print("Received message:", data)
+
+        try:
+            if data[0] == "deplacer":
+                deplacer(int(data[1]))
+        except IndexError:
+            print("message not indexable")
 
     except BlockingIOError:
         pass
-    print(compteur)
+
+    print("count:",count,end=" ")
+    print(message)
+    count+=1
+    time.sleep(1)
     
 
 print("UDP target IP: %s" % UDP_IP)
 print("UDP target port: %s" % UDP_PORT)
 print("message: %s" % MESSAGE)
-
-
-"""
