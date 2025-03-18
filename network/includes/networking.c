@@ -79,6 +79,35 @@ char * getip(const char * interface){
     return NULL;  // interface not found
 }
 
+networkStruct initializeListenSocket(){
+    networkStruct ntStruct;
+    bzero(&(ntStruct.addr), sizeof(struct sockaddr_in));
+    ntStruct.sockFd = 0;
+    struct sockaddr_in server_sa;
+    char *ip = getip("eth0");
+    socklen_t len = sizeof(server_sa);
+    bzero(&server_sa, sizeof(struct sockaddr_in));
+    int udpserverfd = udpserver(&server_sa, SERVERPORT, ip);
+    ntStruct.addr = server_sa;
+    ntStruct.sockFd = udpserverfd;    
+    return ntStruct;
+}
+
+networkStruct initializeProgramSocket(){
+    networkStruct ntStruct;
+    bzero(&(ntStruct.addr), sizeof(struct sockaddr_in));
+    struct sockaddr_in program_sa; 
+    socklen_t len = sizeof(program_sa);
+    ntStruct.addr = program_sa;
+    ntStruct.sockFd = udpclient(&program_sa, LOCALHOSTPORT, LOCALHOSTIP);
+    return ntStruct;
+}
+
+int initializeProgramConnection(){
+    // Insérer ici le code d'initialisation de la communication avec le programme python
+    
+}
+
 
 void initializeCliList(selectStruct* sStruct){
     for (int i = 0; i<MAXCLIENTS; i++){
