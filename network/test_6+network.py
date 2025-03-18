@@ -23,9 +23,9 @@ else :
 
 """
 
-UDP_IP_MAX = "192.168.128.250" #192.168.128.254
+UDP_IP_MAX = "192.168.128.254" #192.168.128.254
 UDP_PORT = 5005
-UDP_IP_ETAN = "192.168.128.254" #192.168.128.250
+UDP_IP_ETAN = "192.168.128.250" #192.168.128.250
 
 #MESSAGE = b"Hello, World!"
 
@@ -98,6 +98,7 @@ receive = 0
 while not(receive) : 
     try:
             message = sock.recvfrom(1024)
+            received_data = pickle.loads(message)
             print("received message: %s" % message)
 
             try:
