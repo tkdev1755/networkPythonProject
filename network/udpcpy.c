@@ -18,7 +18,8 @@ if (socketfd < 0) {
 
 printf("Client UDP démarré. Préparation à envoyer un message...\n");
 
-char message[BUFFER_SIZE] = "unit_move|playerA|10,20";  // Exemple d'événement réseau
+char message[BUFFER_SIZE] = "unit_move|playerA|10,20"; /*là on modifiera le message selon celui reçue
+                                                        de la connection udp avec l'autre joueur*/
 
 socklen_t python_len = sizeof(python_sa);
 int sentLen = sendto(socketfd, message, strlen(message), 0, (struct sockaddr *)&python_sa, python_len);
