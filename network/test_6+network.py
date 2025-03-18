@@ -60,7 +60,13 @@ def get_file_size(file_path):
     
 # ENVOI DE LA REQUETE DE CONNEXION AU CREATEUR DE LA PARTIE
 
-subprocess.run(["./networkEngine", "j"])
+try:
+    subprocess.run(["./network/networkEngine", "j"], check=True)
+except FileNotFoundError:
+    print("Erreur : 'networkEngine' introuvable.")
+except subprocess.CalledProcessError as e:
+    print(f"Erreur lors de l'exécution de 'networkEngine' : {e}")
+
 request = 0
 while not(request) : 
     UDP_IP_ETAN = input("Entrez l'IP du créateur de la partie:")
@@ -70,6 +76,7 @@ while not(request) :
     sock.setblocking(0) #socket non bloquante
 
     try:
+        sock.sendto(b"coucou", (UDP_IP_ETAN, UDP_PORT))
         sock.sendto(bytes(f"CONNECT;{UDP_IP_MAX};{UDP_PORT}",'utf-8'), (UDP_IP_ETAN, UDP_PORT))
         request = 1
     except BlockingIOError:

@@ -25,7 +25,7 @@ sock.setblocking(0) #socket non bloquante
 sock.bind((UDP_IP,UDP_PORT))
 
 while True:
-    sock.sendto(b"ajouter;1", (IP_ETAN, UDP_PORT))
+    sock.sendto(b"CONNECT;192.168.128.254;5005", (IP_ETAN, UDP_PORT))
 
     try:
         '''data, addr = sock.recvfrom(1024)
