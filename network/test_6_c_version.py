@@ -2,9 +2,6 @@ import socket
 import time
 import pickle
 import os
-import subprocess
-import utils
-import asyncio
 from utils import NetworkEngine
 LOCALHOSTIP  = "127.0.0.1"
 LOCALHOSTPORT = 5005
@@ -59,9 +56,8 @@ else :
 programSocket = intializeProgramSocket()
 
 
-networkEngine = NetworkEngine()
 
-process = networkEngine.launch_c_program("./networkEngine",["j",f"{DEST_IP}", f"{DEST_PORT}"])
+NetworkEngine.launch_c_program("./networkEngine","j", DEST_IP, DEST_PORT)
 
 programADDR = programHandshake(programSocket=programSocket)
 
