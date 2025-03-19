@@ -140,29 +140,33 @@ networkStruct initializeListenSocket(){
 }
 
 networkStruct initializeProgramSocket(){
-    printf("Initializing Program socket\n");
+    write(1,"Initializing Program socket\n",29);
     networkStruct ntStruct;
     bzero(&(ntStruct.sock_addr), sizeof(struct sockaddr_in));
     struct sockaddr_in program_sa; 
     ntStruct.addrLen = sizeof(program_sa);
     ntStruct.sock_addr = program_sa;
-    ntStruct.sockFd = udpclient(&program_sa, LOCALHOSTPORT, LOCALHOSTIP);
-    printf("Finished initializing program socket \n");
+    ntStruct.sockFd = udpclient(&ntStruct.sock_addr, LOCALHOSTPORT, LOCALHOSTIP);
+    write(1,"Finished initializing program socket \n",39);
     return ntStruct;
 }
 
 int initializeProgramConnection(networkStruct programSocket){
-    char* connectRequest = "PROG_CONNECT_OK; ; ";
+    write(1,"Began Program Connection\n", 26);
+    char connectRequest[BUFFER_SIZE+1];
+    strncpy(connectRequest,"PROG_CONNECT_OK; ; ",20);
     int sentBytes = sendto(programSocket.sockFd,connectRequest,sizeof(connectRequest), 0, &programSocket.sock_addr, programSocket.addrLen);
     if (sentBytes < 0){
         stop("Error while initializing program");
     }
+    write(1,"Sent conn request\n", 19);
     bzero(connectRequest, BUFFER_SIZE+1);
     int recievedBytes = recvfrom(programSocket.sockFd, connectRequest,BUFFER_SIZE,0,&programSocket.sock_addr, &programSocket.addrLen);
     if (recievedBytes < 0){
         stop("Error while getting ACK");
     }    
     else{
+        write(1,"Sent conn request\n", 19);
         printf("Successfully initialized Program connection");
     }
 }

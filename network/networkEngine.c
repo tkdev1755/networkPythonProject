@@ -56,7 +56,7 @@
 
 
 int main(int argc, char *argv[]){
-    write(1,"[NetworkEngine] Starting Network Engine \n");
+    write(1,"[NetworkEngine] Starting Network Engine \n",42);
     //char *ip = getip("eth0"); //ip of my eth0 interface
     struct sockaddr_in client_sa, localhost_sa;
     //socklen_t len = sizeof(client_sa);
@@ -67,7 +67,7 @@ int main(int argc, char *argv[]){
     char programMSG[BUFFER_SIZE+1];
     networkStruct serverSocket;
     networkStruct programSocket = initializeProgramSocket();
-    printf("[NetworkEngine] Ended Program socket init, starting handshake with PythonProgram\n ");
+    write(1,"[NetworkEngine] Ended Program socket init, starting handshake with PythonProgram\n ",83);
     initializeProgramConnection(programSocket);
 /*
     if (argc > 2)

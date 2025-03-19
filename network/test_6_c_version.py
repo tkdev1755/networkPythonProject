@@ -3,38 +3,45 @@ import time
 import pickle
 import os
 import subprocess
-
-
+import utils
+import asyncio
+from utils import NetworkEngine
 LOCALHOSTIP  = "127.0.0.1"
 LOCALHOSTPORT = 5005
+
+
 
 def intializeProgramSocket():
     print("NetworkEngine init START")
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     sock.bind((LOCALHOSTIP,LOCALHOSTPORT))
-    sock.setblocking(0)
+    sock.setblocking(False)
     print("Socket opened")
     return sock
 
 def programHandshake(programSocket):
+    print("Started Handshake")
     while 1:
         try: 
             data, addr = programSocket.recvfrom(20)
+            print("RECIEVED SOMETHING !")
             if (data == "PROG_CONNECT_OK; ; "):
                 try:
                     programSocket.sendto(bytes(f"OK_200; ; ",'utf-8'),addr)
                     print("Network init END")
                     return addr
-                except:
-                    
-                    print("ERROR WHILE SENDING BACK DATA")
-        except :
-            print("ERROR WHILE COMMUNICATING WITH PROGRAM")
+                except BlockingIOError as e :
+                    pass
+        except BlockingIOError as e:
+            print("Waiting to recieve DATA")
+            pass
 
+
+
+##### BOUCLE INITIALISATION #####
 
 print("Créer une partie 'n' ou  rejoindre une partie 'j' \n")
 
-##### BOUCLE INITIALISATION #####
 corj = input()
 DEST_IP = "NONE"
 DEST_PORT = -1
@@ -51,17 +58,20 @@ else :
 
 programSocket = intializeProgramSocket()
 
-try:
-    # Le subprocess.run ici est pour linux/macos, à changer pour windows
-    subprocess.run(["./networkEngine", "j",f"{DEST_IP}",f"{DEST_PORT}"], check=True)
-except FileNotFoundError:
-    print("Erreur : 'networkEngine' introuvable.")
-except subprocess.CalledProcessError as e:
-    print(f"Erreur lors de l'exécution de 'networkEngine' : {e}")
+
+networkEngine = NetworkEngine()
+
+process = networkEngine.launch_c_program("./networkEngine",["j",f"{DEST_IP}", f"{DEST_PORT}"])
 
 programADDR = programHandshake(programSocket=programSocket)
 
+
+print("Ended Program Handshake")
+if programADDR == -1: 
+    print("ERREUR lors de la récéption du message de la part du C")
 ##### FIN BOUCLE INITIALISATION #####
+
+
 
 UDP_IP_MAX = "192.168.128.250" #192.168.128.254
 UDP_PORT = 5005
