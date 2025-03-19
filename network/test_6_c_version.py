@@ -46,7 +46,7 @@ def programHandshake(programSocket):
         pass
     except Exception as e:
         print("ERROR !! : ",e)
-
+        
 
 
 
@@ -127,15 +127,13 @@ def get_file_size(file_path):
 
 request = 0
 
-
-try:
-    #sock.sendto(b"coucou", (UDP_IP_ETAN, UDP_PORT))
-    print("SENDING CONNECT")
-    programSocket.sendto(bytes(f"CONNECT; ; ",'utf-8'), programADDR)
-    request = 1
-    print("SENT CONNECT")
-except Exception as e:
-    print("ERREUR LORS DU CONNECT: ", e)
+while not(request) :
+    try:
+        #sock.sendto(b"coucou", (UDP_IP_ETAN, UDP_PORT))
+        programSocket.sendto(bytes(f"CONNECT; ; ",'utf-8'), programADDR)
+        request = 1
+    except BlockingIOError:
+        pass
 
     '''
     try:
