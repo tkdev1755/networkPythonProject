@@ -93,6 +93,9 @@ int main(int argc, char *argv[]){
     }
 
     while (1)
+    }
+    exit(0);
+    /*while (1)
     {
         // Attente d'une commande de la part d'un autre client;
         clientBytes = recvfrom(serverSocket.sockFd, cliMSG, BUFFER_SIZE - 1, MSG_DONTWAIT, (struct sockaddr *)&client_sa, &len);
@@ -127,7 +130,7 @@ int main(int argc, char *argv[]){
             }
             bzero(programMSG, BUFFER_SIZE + 1);
         }
-    }
+    }*/
     
     return EXIT_SUCCESS;
 }

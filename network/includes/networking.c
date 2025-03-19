@@ -118,15 +118,15 @@ networkStruct join_game(char * game_ip, unsigned int game_port){
     // sock_localhost.sin_family = AF_INET;
     // sock_localhost.sin_addr.s_addr = inet_addr(LOCALHOSTIP);
     // sock_localhost.sin_port = LOCALHOSTPORT;
-    
-    
+
+
     if((received_bytes = recvfrom(joinning_struct.sockFd, received_msg, BUFFER_SIZE, 0, (struct sockaddr *) &sock_localhost, &len))<0){
-        close(joinning_struct.sockFd);  
+        close(joinning_struct.sockFd);
         fclose(file);
         stop("Erreur lors de la reception du packet\n");
     }
     // printf("Info emeteur\nIp : %s\n", inet_ntoa(sock_localhost.sin_addr));
-    
+
     // if(sendto(joinning_struct.sockFd, received_msg, received_bytes, 0, (struct sockaddr *) &sock_to_send_srv, sizeof(sock_to_send_srv)) < 0){
     if(sendto(joinning_struct.sockFd, received_msg, received_bytes, 0, (struct sockaddr *) &sock_to_send_srv, sizeof(sock_to_send_srv)) < 0){
         close(joinning_struct.sockFd);
