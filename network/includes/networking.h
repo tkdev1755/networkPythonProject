@@ -49,7 +49,7 @@ typedef struct networkStruct networkStruct;
 
 // int tcpserver(struct sockaddr_in * sa, int port, char * ip, struct linger* so_linger_opt);
 // int tcpclient(struct sockaddr_in * server_sa, int port, char * ip, struct linger* so_linger_opt);
-int changeSTDOut(char* filename);
+void changeSTDOut(char* filename);
 
 int udpserver(struct sockaddr_in * server_sa, int port, char * ip);
 int udpclient(struct sockaddr_in * server_sa, int port, char * ip);

@@ -57,25 +57,27 @@
 
 
 int main(int argc, char *argv[]){
-    write(1,"[NetworkEngine] Starting Network Engine \n",42);
-    //char *ip = getip("eth0"); //ip of my eth0 interface
+    changeSTDOut("out.txt");
+    write(stdoutFD,"[NetworkEngine] Starting Network Engine \n",42);
+    char *ip = getip(INTERFACE); //ip of my eth0 interface
     struct sockaddr_in client_sa, localhost_sa;
     socklen_t len = sizeof(client_sa);
+    socklen_t len = sizeof(client_sa);
     int clientBytes = 0;
-    // int clientStatus = 0; // Représente si le client est en train de transmettre des bytes ou en train d'en recevoir, n'est pas utilisé pour le moment
+    int clientStatus = 0; // Représente si le client est en train de transmettre des bytes ou en train d'en recevoir, n'est pas utilisé pour le moment 
     int programBytes = 0;
     char cliMSG[BUFFER_SIZE+1];
     char programMSG[BUFFER_SIZE+1];
     networkStruct serverSocket;
     networkStruct programSocket = initializeProgramSocket();
-    write(1,"[NetworkEngine] Ended Program socket init, starting handshake with PythonProgram\n ",83);
-    // initializeProgramConnection(programSocket);
-    if (argc < 2) {
-        printf("Usage: %s <options>\n", argv[0]);
-        return 1;
-    }
+    write(stdoutFD,"[NetworkEngine] Ended Program socket init, starting handshake with PythonProgram\n ",83);
+    initializeProgramConnection(programSocket);
 
-    char *option = argv[1];
+    if (argc > 2)
+    {
+        printf("%s\n", argv[1]);
+        char *argument = argv[1];
+        char finalArgument = argument[0];
 
     switch (option[0]) {
         case 'n':
@@ -83,8 +85,16 @@ int main(int argc, char *argv[]){
             serverSocket = createGame(&client_sa, &len, &programSocket);
             break;
         case 'j':
-            // printf("Option j sélectionnée\n");
-            serverSocket = join_game("192.168.1.163", 8000);
+            write(stdoutFD,"d",1);
+            char *ip = argv[2];
+            write(stdoutFD,"IP IS :", 8);
+            write(stdoutFD,ip, 17);
+            write(stdoutFD,"\n",1);
+            int port = atoi(argv[3]);
+            write(stdoutFD,"PORT IS", 8);
+            write(stdoutFD, argv[3], 6);
+            serverSocket = join_game(ip, port);
+            //joinning a game 
             break;
         default:
             printf("Option inconnue : %s\n", option);
@@ -126,7 +136,7 @@ int main(int argc, char *argv[]){
             }
             bzero(programMSG, BUFFER_SIZE + 1);
         }
-    }*/
+    }
     
     return EXIT_SUCCESS;
 }

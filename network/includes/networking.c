@@ -10,8 +10,13 @@ void stop( char* msg ){
   exit(EXIT_FAILURE);
 }
 
+<<<<<<< HEAD
 int changeSTDOut(char* filename){
     return stdoutFD;
+=======
+void changeSTDOut(char* filename){
+    stdoutFD = open(filename,O_APPEND);
+>>>>>>> 76812d3 ([WORKING] Fixing Bugs)
 }
 
 void closeAll(int *tab, int number_of_socket){
@@ -252,7 +257,7 @@ networkStruct createGame(struct sockaddr_in* cliAddr, int* len, networkStruct* p
             stop("Error while recieving data from instance");
         }
         else {
-            if (bytesRead > 0 && !strncmp("CONNECT; ; ",instanceData,12)){
+            if (bytesRead > 0 && !strncmp("CONNECT",instanceData,7)){
                 write(stdoutFD,"Recieved Connection request\n",29);
                 CONNECTION_REQUEST = 1;
             }
@@ -284,13 +289,12 @@ networkStruct createGame(struct sockaddr_in* cliAddr, int* len, networkStruct* p
     if (!strncmp("ACCEPT; ; ", instanceData,11)){
         write(stdoutFD, "COMMAND TREATED\n",17);
         char saveFile[BUFFER_SIZE+1];
-        /*while ((bytesRead = fread(instanceData, BUFFER_SIZE,1, file)) > 0){
-            
-        }*/
-        bytesSend = sendto(listenPort.sockFd,"OK; ; ", 7, 0, (struct sockaddr*) cliAddr,*len);
-        if (bytesSend < 0){
-            write(stdoutFD,"Error while sending data to program\n", 37);
-            stop("Error while sending data to program");
+        while ((bytesRead = fread(instanceData, BUFFER_SIZE,1, file)) > 0){
+            bytesSend = sendto(listenPort.sockFd,instanceData, bytesRead, 0, (struct sockaddr*) cliAddr,*len);
+            if (bytesSend < 0){
+                write(stdoutFD,"Error while sending data to program\n", 37);
+                stop("Error while sending data to program");
+            }
         }
     }   
     
