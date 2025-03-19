@@ -105,7 +105,7 @@ int main(int argc, char *argv[]){
         }
         else{
             // clientStatus = 1;
-            if (sendto(serverSocket.sockFd, programMSG, BUFFER_SIZE-1, 0, (struct sockaddr *)&client_sa, len)){
+            if (sendto(serverSocket.sockFd, programMSG, BUFFER_SIZE-1, 0, (struct sockaddr *)&client_sa, len) < 0){
                 stop("Error while sending data to instance");
             }
             bzero(programMSG, BUFFER_SIZE + 1);
