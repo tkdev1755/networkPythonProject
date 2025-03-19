@@ -10,13 +10,8 @@ void stop( char* msg ){
   exit(EXIT_FAILURE);
 }
 
-<<<<<<< HEAD
 int changeSTDOut(char* filename){
     return stdoutFD;
-=======
-void changeSTDOut(char* filename){
-    stdoutFD = open(filename,O_APPEND);
->>>>>>> 76812d3 ([WORKING] Fixing Bugs)
 }
 
 void closeAll(int *tab, int number_of_socket){

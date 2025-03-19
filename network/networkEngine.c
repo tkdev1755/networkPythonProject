@@ -57,8 +57,7 @@
 
 
 int main(int argc, char *argv[]){
-    changeSTDOut("out.txt");
-    write(stdoutFD,"[NetworkEngine] Starting Network Engine \n",42);
+    write(stdoutFD,"[NetworkEngine] Starting Network Engine\n",41);
     char *ip = getip(INTERFACE); //ip of my eth0 interface
     struct sockaddr_in client_sa, localhost_sa;
     socklen_t len = sizeof(client_sa);
