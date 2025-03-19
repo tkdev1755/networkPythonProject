@@ -1,6 +1,7 @@
 #include "networking.h"
 #include <stdlib.h>
 #include <stdio.h>
+#include <unistd.h>
 
 void stop( char* msg ){
   perror(msg);
