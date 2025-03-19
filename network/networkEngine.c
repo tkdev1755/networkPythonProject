@@ -1,4 +1,5 @@
 #include "includes/networking.h"
+#include <fcntl.h>
 
 
 /*
@@ -61,7 +62,7 @@ int main(int argc, char *argv[]){
     struct sockaddr_in client_sa, localhost_sa;
     //socklen_t len = sizeof(client_sa);
     int clientBytes = 0;
-    // int clientStatus = 0; // Représente si le client est en train de transmettre des bytes ou en train d'en recevoir, n'est pas utilisé pour le moment 
+    // int clientStatus = 0; // Représente si le client est en train de transmettre des bytes ou en train d'en recevoir, n'est pas utilisé pour le moment
     int programBytes = 0;
     char cliMSG[BUFFER_SIZE+1];
     char programMSG[BUFFER_SIZE+1];
