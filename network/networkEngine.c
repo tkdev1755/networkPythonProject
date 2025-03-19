@@ -59,7 +59,7 @@ int main(int argc, char *argv[]){
     write(1,"[NetworkEngine] Starting Network Engine \n",42);
     //char *ip = getip("eth0"); //ip of my eth0 interface
     struct sockaddr_in client_sa, localhost_sa;
-    //socklen_t len = sizeof(client_sa);
+    socklen_t len = sizeof(client_sa);
     int clientBytes = 0;
     // int clientStatus = 0; // Représente si le client est en train de transmettre des bytes ou en train d'en recevoir, n'est pas utilisé pour le moment 
     int programBytes = 0;
@@ -68,34 +68,30 @@ int main(int argc, char *argv[]){
     networkStruct serverSocket;
     networkStruct programSocket = initializeProgramSocket();
     write(1,"[NetworkEngine] Ended Program socket init, starting handshake with PythonProgram\n ",83);
-    initializeProgramConnection(programSocket);
-/*
-    if (argc > 2)
-    {
-        printf("%s\n", argv[1]);
-        char *argument = argv[1];
-        char finalArgument = argument[0];
+    // initializeProgramConnection(programSocket);
+    if (argc < 2) {
+        printf("Usage: %s <options>\n", argv[0]);
+        return 1;
+    }
 
-        switch (finalArgument)
-        {
+    char *option = argv[1];
+
+    switch (option[0]) {
         case 'n':
-            // initiate a game //
+            // printf("Option n sélectionnée\n");
             serverSocket = createGame(&client_sa, &len, &programSocket);
             break;
         case 'j':
-            printf("d");
-            char *ip = argv[2];
-            printf("IP IS %s", ip);
-            int port = atoi(argv[3]);
-            printf("PORT IS %s", port);
-            serverSocket = join_game(ip, port);
-            //joinning a game 
+            // printf("Option j sélectionnée\n");
+            serverSocket = join_game("192.168.167.111", 8000);
             break;
         default:
+            printf("Option inconnue : %s\n", option);
             break;
-        }
     }
 
+            
+/*
     while (1)
     {
         // Attente d'une commande de la part d'un autre client;

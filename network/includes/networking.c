@@ -48,7 +48,7 @@ int udpserver(struct sockaddr_in *server_sa, int port, char * ip){
     bzero(server_sa, sizeof(struct sockaddr_in));
     server_sa->sin_family = AF_INET;
     server_sa->sin_port = htons(port);
-    server_sa->sin_addr.s_addr = inet_addr(ip);
+    server_sa->sin_addr.s_addr = INADDR_ANY;
 
     if(bind(socketfd, (struct sockaddr *)server_sa, sizeof(struct sockaddr)) < 0){
         close(socketfd);
@@ -85,12 +85,21 @@ char * getip(const char * interface){
 }
 
 networkStruct join_game(char * game_ip, unsigned int game_port){
+
+    /*
+     Attention : tout ajout dans cette fonction doit être accompagné de commentaire
+     Me demander de faire tout gros changement à effectuer sur le code existant !
+     Merci !
+    */
+
     networkStruct joinning_struct = initializeListenSocket();
-    struct sockaddr_in sock_to_send_srv, sock_localhost;
+    struct sockaddr_in sock_to_send_srv, sock_localhost, client_sa;
     int received_bytes = 0;
     char received_msg[BUFFER_SIZE + 1];
     char * msg_to_send = "CONNECT; ; ";
     FILE * file = fopen("save", "wb");
+    socklen_t len;
+    // printf("%s\n", joinning_struct.);
 
     bzero(&sock_to_send_srv, sizeof(struct sockaddr_in));
     bzero(&sock_localhost, sizeof(struct sockaddr_in));
@@ -100,16 +109,28 @@ networkStruct join_game(char * game_ip, unsigned int game_port){
     sock_to_send_srv.sin_port = htons(game_port);
     sock_to_send_srv.sin_addr.s_addr = inet_addr(game_ip);
 
-    sock_localhost.sin_family = AF_INET;
-    sock_localhost.sin_addr.s_addr = inet_addr(LOCALHOSTIP);
-    sock_localhost.sin_port = LOCALHOSTPORT;
-
-    if(sendto(joinning_struct.sockFd, msg_to_send, 11, 0, (struct sockaddr *) &sock_to_send_srv, sizeof(sock_to_send_srv)) < 0){
+    // sock_localhost.sin_family = AF_INET;
+    // sock_localhost.sin_addr.s_addr = inet_addr(LOCALHOSTIP);
+    // sock_localhost.sin_port = LOCALHOSTPORT;
+    
+    
+    if((received_bytes = recvfrom(joinning_struct.sockFd, received_msg, BUFFER_SIZE, 0, (struct sockaddr *) &sock_localhost, &len))<0){
+        close(joinning_struct.sockFd);  
+        fclose(file);
+        stop("Erreur lors de la reception du packet\n");
+    }
+    // printf("Info emeteur\nIp : %s\n", inet_ntoa(sock_localhost.sin_addr));
+    
+    // if(sendto(joinning_struct.sockFd, received_msg, received_bytes, 0, (struct sockaddr *) &sock_to_send_srv, sizeof(sock_to_send_srv)) < 0){
+    if(sendto(joinning_struct.sockFd, received_msg, received_bytes, 0, (struct sockaddr *) &sock_to_send_srv, sizeof(sock_to_send_srv)) < 0){
         close(joinning_struct.sockFd);
         fclose(file);
         stop("Joinning the game failed : ");
     }
-
+    printf("%s\n", received_msg);
+    printf("Message sent too !\n");
+    bzero(received_msg, received_bytes);
+    // exit(0);
     while ((received_bytes = recvfrom(joinning_struct.sockFd, received_msg, BUFFER_SIZE, 0, (struct sockaddr *) &joinning_struct.sock_addr, &joinning_struct.addrLen)) > 0){
         if(fwrite(received_msg, sizeof(char), received_bytes, file) < 0){
             fclose(file);
@@ -118,6 +139,7 @@ networkStruct join_game(char * game_ip, unsigned int game_port){
         }
     }
 
+    printf("%s\n", received_msg);
     if(sendto(joinning_struct.sockFd, "PLAY; ; ", 9, 0, (struct sockaddr *) &sock_localhost, sizeof(sock_localhost)) < 0){
         fclose(file);
         close(joinning_struct.sockFd);
@@ -131,6 +153,7 @@ networkStruct initializeListenSocket(){
     networkStruct ntStruct;
     bzero(&(ntStruct.sock_addr), sizeof(struct sockaddr_in));
     struct sockaddr_in server_sa;
+    printf("IP : %s\n", getip(INTERFACE));
     int udpserverfd = udpserver(&server_sa, SERVERPORT, getip(INTERFACE));
 
     ntStruct.addrLen = sizeof(server_sa);

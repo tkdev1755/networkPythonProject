@@ -6,7 +6,7 @@
 #define SERVERPORT 8000
 #define MAXLINE 2048
 #define LOCALHOSTIP "127.0.0.1"
-#define INTERFACE "en0"
+#define INTERFACE "eth0"
 #include <sys/socket.h>
 #include <sys/select.h>
 #include <netinet/in.h>
