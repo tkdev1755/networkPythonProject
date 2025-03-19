@@ -63,7 +63,7 @@ networkEngine = NetworkEngine()
 
 process = networkEngine.launch_c_program("./networkEngine",["j",f"{DEST_IP}", f"{DEST_PORT}"])
 
-programADDR = programHandshake(programSocket=programSocket)
+programADDR = programHandshake(programSocket)
 
 
 print("Ended Program Handshake")
