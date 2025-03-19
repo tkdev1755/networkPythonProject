@@ -1,7 +1,6 @@
 #include "networking.h"
 #include <stdlib.h>
 #include <stdio.h>
-#include <unistd.h>
 
 void stop( char* msg ){
   perror(msg);
@@ -101,8 +100,8 @@ networkStruct join_game(char * game_ip, unsigned int game_port){
     sock_to_send_srv.sin_addr.s_addr = inet_addr(game_ip);
 
     sock_localhost.sin_family = AF_INET;
-    sock_localhost.sin_addr.s_addr = inet_addr(LOCALHOSTIP);
-    sock_localhost.sin_port = LOCALHOSTPORT;
+    sock_localhost.sin_addr.s_addr = inet_addr("127.0.0.1");
+    sock_localhost.sin_port = 5005;
 
     if(sendto(joinning_struct.sockFd, msg_to_send, 11, 0, (struct sockaddr *) &sock_to_send_srv, sizeof(sock_to_send_srv)) < 0){
         close(joinning_struct.sockFd);
@@ -131,7 +130,7 @@ networkStruct initializeListenSocket(){
     networkStruct ntStruct;
     bzero(&(ntStruct.sock_addr), sizeof(struct sockaddr_in));
     struct sockaddr_in server_sa;
-    int udpserverfd = udpserver(&server_sa, SERVERPORT, getip(INTERFACE));
+    int udpserverfd = udpserver(&server_sa, SERVERPORT, getip("eth0"));
 
     ntStruct.addrLen = sizeof(server_sa);
     ntStruct.sock_addr = server_sa;
@@ -141,35 +140,20 @@ networkStruct initializeListenSocket(){
 }
 
 networkStruct initializeProgramSocket(){
-    write(1,"Initializing Program socket\n",29);
     networkStruct ntStruct;
     bzero(&(ntStruct.sock_addr), sizeof(struct sockaddr_in));
     struct sockaddr_in program_sa; 
+
     ntStruct.addrLen = sizeof(program_sa);
     ntStruct.sock_addr = program_sa;
-    ntStruct.sockFd = udpclient(&ntStruct.sock_addr, LOCALHOSTPORT, LOCALHOSTIP);
-    write(1,"Finished initializing program socket \n",39);
+    ntStruct.sockFd = udpclient(&program_sa, LOCALHOSTPORT, LOCALHOSTIP);
+
     return ntStruct;
 }
 
-int initializeProgramConnection(networkStruct programSocket){
-    write(1,"Began Program Connection\n", 26);
-    char connectRequest[BUFFER_SIZE+1];
-    strncpy(connectRequest,"PROG_CONNECT_OK; ; ",20);
-    int sentBytes = sendto(programSocket.sockFd,connectRequest,sizeof(connectRequest), 0, &programSocket.sock_addr, programSocket.addrLen);
-    if (sentBytes < 0){
-        stop("Error while initializing program");
-    }
-    write(1,"Sent conn request\n", 19);
-    bzero(connectRequest, BUFFER_SIZE+1);
-    int recievedBytes = recvfrom(programSocket.sockFd, connectRequest,BUFFER_SIZE,0,&programSocket.sock_addr, &programSocket.addrLen);
-    if (recievedBytes < 0){
-        stop("Error while getting ACK");
-    }    
-    else{
-        write(1,"Sent conn request\n", 19);
-        printf("Successfully initialized Program connection");
-    }
+int initializeProgramConnection(){
+    // Insérer ici le code d'initialisation de la communication avec le programme python
+    
 }
 
 networkStruct createGame(struct sockaddr_in* cliAddr, int* len, networkStruct* programSocket){
@@ -199,7 +183,7 @@ networkStruct createGame(struct sockaddr_in* cliAddr, int* len, networkStruct* p
     }
     // Deuxième partie de la connexion - Lecture du fichier .pkl et Envoi du monde à la deuxième instance
     // Envoi de la commande au programme python
-    int sentData = sendto(programSocket->sockFd,instanceData, bytesRead, 0, (struct sockaddr*) &programSocket->sock_addr,programSocket->addrLen);
+    int sentData = sendto(programSocket->sockFd,instanceData, bytesRead, 0, (struct sockaddr*) &programSocket->sock_addr,&programSocket->addrLen);
     if (sentData < 0){
         stop("Error while sending command to program");
     }
@@ -210,11 +194,11 @@ networkStruct createGame(struct sockaddr_in* cliAddr, int* len, networkStruct* p
     if (bytesRead < 0){
         stop("Error while recieving data from program");
     }
-    if (!strncmp("ACCEPT", instanceData,6)){
+    if (!stnrcmp("ACCEPT", instanceData,6)){
         FILE* file = fopen("save","rb");
         char saveFile[BUFFER_SIZE+1];
-        while ((bytesRead = fread(instanceData, BUFFER_SIZE,1, file)) > 0){
-            bytesSend = sendto(listenPort.sockFd,instanceData, bytesRead, 0, (struct sockaddr*) cliAddr,*len);
+        while ((bytesRead = (instanceData, BUFFER_SIZE,1, file)) > 0){
+            bytesSend = sendto(listenPort.sockFd,instanceData, bytesRead, 0, (struct sockaddr*) cliAddr,len);
             if (bytesSend < 0){
                 stop("Error while sending data to program");
             }
@@ -236,7 +220,7 @@ networkStruct createGame(struct sockaddr_in* cliAddr, int* len, networkStruct* p
         }
     }
     // Envoi de la commande START_GAME au programme python
-    bytesSend = sendto(programSocket->sockFd,instanceData, bytesRead, 0, &programSocket->sock_addr,programSocket->addrLen);
+    int bytesSend = sendto(programSocket->sockFd,instanceData, bytesRead, 0, &programSocket->sock_addr,&programSocket->addrLen);
     if (bytesSend < 0){
         stop("Error while sending command to program");
     }
@@ -259,118 +243,3 @@ networkStruct createGame(struct sockaddr_in* cliAddr, int* len, networkStruct* p
     */
     return listenPort;
 } 
-
-// void initializeCliList(selectStruct* sStruct){
-//     for (int i = 0; i<MAXCLIENTS; i++){
-//             sStruct->cliList[i] = 0;
-//         }
-// }
-// void initializeMasterSocket(selectStruct* sStruct, networkStruct* ntStruct){
-//     sStruct->masterSocket = ntStruct->sockFd;
-// }
-// int clearFDSets(selectStruct* sStruct){
-//     switch (sStruct->activeSets)
-//     {
-//     case 1:
-//         FD_ZERO(&(sStruct->readFds));
-//         break;
-//     case 2:
-//         FD_ZERO(&(sStruct->readFds));
-//         FD_ZERO(&(sStruct->writeFds));
-//         break;
-//     case 3:
-//         FD_ZERO(&(sStruct->readFds));
-//         FD_ZERO(&(sStruct->writeFds));
-//         FD_ZERO(&(sStruct->errorFds));
-//         break;
-//     default:
-//         printf("activeSet value not in range \n");
-//         return -1;
-//         break;
-//     }
-//     FD_SET(sStruct->masterSocket, &(sStruct->readFds));
-//     sStruct->maxSD = sStruct->masterSocket;
-//     return 0;
-// }
-
-// int updateFDSets(selectStruct* sStruct){
-//     printf("Updating maxClients\n");
-
-//     for (int i = 0 ; i< MAXCLIENTS; i++){
-            
-//             int sd = sStruct->cliList[i]; 
-//             if (sd > 0){
-//                 printf("Found new Socket Descriptor\n");
-//                 switch (sStruct->activeSets)
-//                 {
-//                 case 1:
-//                     FD_SET(sd,&(sStruct->readFds));
-//                     break;
-//                 case 2:
-//                     FD_SET(sd,&(sStruct->readFds));
-//                     FD_SET(sd,&(sStruct->writeFds));
-//                     break;
-//                 case 3:
-//                     FD_SET(sd,&(sStruct->readFds));
-//                     FD_SET(sd,&(sStruct->writeFds));
-//                     FD_SET(sd,&(sStruct->errorFds));
-//                     break;
-//                 default:
-//                     printf("Wrong activeSets parameter \n");
-//                     return -1;
-//                     break;
-//                 }
-//             }
-//             if (sd > sStruct->maxSD){
-//                 printf("Max fd is updated\n");
-//                 sStruct->maxSD = sd;
-//             }
-//     }
-//     return 0;
-// }
-
-// int checkForNewConnection(selectStruct* sStruct){
-//     int cliFD = 0;
-//     struct sockaddr_in cliAddr;
-//     socklen_t cliLen;
-//     if (FD_ISSET(sStruct->masterSocket, &(sStruct->readFds))){
-//             printf("read activity on Master socket\n"); 
-//             if ((cliFD = accept(sStruct->masterSocket, (struct sockaddr*) &cliAddr,&cliLen))<0){
-//                 return -1;
-//             }
-//             for (int i = 0; i<MAXCLIENTS; i++){
-//                 if (sStruct->cliList[i] == 0){
-//                     sStruct->cliList[i] = cliFD;
-//                     printf("Added new client to fdList at position %d\n", i);
-//                     i = MAXCLIENTS;
-//                     sStruct->maxSD = sStruct->maxSD>cliFD ? sStruct->maxSD : cliFD;
-//                 }
-//             }
-            
-//             printf("====== !!! New client connected : Sockfd %d, ip is %s, port is %d====== !!!\n", cliFD, inet_ntoa(cliAddr.sin_addr),ntohs(cliAddr.sin_port));
-//     }
-//     return 0;
-// }
-
-// int disconnectClient(selectStruct* sStruct, int cliSD, int cliPos){
-//     printf("Disconnecting client \n");
-//     if (close(cliSD) < 0){
-//         return -1;
-//     }
-//     sStruct->cliList[cliPos] = 0;
-//     return 0;
-// }
-
-
-// int input_timeout(int fd, unsigned int seconds){
-//     fd_set fdset;
-
-//     FD_ZERO(&fdset);
-//     FD_SET(fd, &fdset);
-
-//     struct timeval timeout;
-//     timeout.tv_sec = seconds;
-//     timeout.tv_usec = 0;
-
-//     return TEMP_FAILURE_RETRY(select(FD_SETSIZE, &fdset, NULL, NULL, &timeout));
-// }
