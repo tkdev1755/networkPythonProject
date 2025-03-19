@@ -22,9 +22,9 @@ def intializeProgramSocket():
 def programHandshake(programSocket):
     print("Started Handshake")
     while 1:
-        try: 
+        try:
             data, addr = programSocket.recvfrom(20)
-            print("RECIEVED SOMETHING !")
+            print("RECEIVED SOMETHING !")
             if (data == "PROG_CONNECT_OK; ; "):
                 try:
                     programSocket.sendto(bytes(f"OK_200; ; ",'utf-8'),addr)
@@ -68,7 +68,7 @@ programADDR = programHandshake(programSocket=programSocket)
 
 print("Ended Program Handshake")
 if programADDR == -1: 
-    print("ERREUR lors de la récéption du message de la part du C")
+    print("ERREUR lors de la réception du message de la part du C")
 ##### FIN BOUCLE INITIALISATION #####
 
 
