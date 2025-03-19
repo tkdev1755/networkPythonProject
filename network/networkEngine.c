@@ -56,9 +56,10 @@
 
 
 int main(int argc, char *argv[]){
-    char *ip = getip("eth0"); //ip of my eth0 interface
+    write(1,"[NetworkEngine] Starting Network Engine \n");
+    //char *ip = getip("eth0"); //ip of my eth0 interface
     struct sockaddr_in client_sa, localhost_sa;
-    socklen_t len = sizeof(client_sa);
+    //socklen_t len = sizeof(client_sa);
     int clientBytes = 0;
     // int clientStatus = 0; // Représente si le client est en train de transmettre des bytes ou en train d'en recevoir, n'est pas utilisé pour le moment 
     int programBytes = 0;
@@ -66,50 +67,71 @@ int main(int argc, char *argv[]){
     char programMSG[BUFFER_SIZE+1];
     networkStruct serverSocket;
     networkStruct programSocket = initializeProgramSocket();
-    if (argc > 3){
+    printf("[NetworkEngine] Ended Program socket init, starting handshake with PythonProgram\n ");
+    initializeProgramConnection(programSocket);
+/*
+    if (argc > 2)
+    {
         printf("%s\n", argv[1]);
-        char argument = argv[1];
-        switch(argument){
-            case 'n':
-                /* initiate a game */
-                serverSocket = createGame();
-                break;
-            case 'j':
-                /*joinning a game */
-                break;
-            default:
-                break;
+        char *argument = argv[1];
+        char finalArgument = argument[0];
+
+        switch (finalArgument)
+        {
+        case 'n':
+            // initiate a game //
+            serverSocket = createGame(&client_sa, &len, &programSocket);
+            break;
+        case 'j':
+            printf("d");
+            char *ip = argv[2];
+            printf("IP IS %s", ip);
+            int port = atoi(argv[3]);
+            printf("PORT IS %s", port);
+            serverSocket = join_game(ip, port);
+            //joinning a game 
+            break;
+        default:
+            break;
         }
     }
 
-    while (1){
-        //Attente d'une commande de la part d'un autre client;
-        clientBytes = recvfrom(serverSocket.sockFd, cliMSG, BUFFER_SIZE-1, MSG_DONTWAIT, (struct sockaddr *) &client_sa, &len);
-        
+    while (1)
+    {
+        // Attente d'une commande de la part d'un autre client;
+        clientBytes = recvfrom(serverSocket.sockFd, cliMSG, BUFFER_SIZE - 1, MSG_DONTWAIT, (struct sockaddr *)&client_sa, &len);
+
         // Gestion de la reception d'une commande de la part d'une autre instance
-        if (clientBytes < 0 && errno != EAGAIN){
+        if (clientBytes < 0 && errno != EAGAIN)
+        {
             stop("error while recieving data from client");
         }
-        else if (clientBytes > 0){
+        else if (clientBytes > 0)
+        {
             // clientStatus = 2; // indique que le client à écrit dans la socket
             // programBytes = ;
-            if (sendto(programSocket.sockFd, cliMSG, BUFFER_SIZE-1, MSG_DONTWAIT, (struct sockaddr *) &programSocket.sock_addr, programSocket.addrLen) < 0){
+            if (sendto(programSocket.sockFd, cliMSG, BUFFER_SIZE - 1, MSG_DONTWAIT, (struct sockaddr *)&programSocket.sock_addr, programSocket.addrLen) < 0)
+            {
                 stop("Error while sending data to python program");
             }
             bzero(cliMSG, BUFFER_SIZE + 1);
         }
         // Gestion de la réception de commandes de la part du programme python
-        programBytes = recvfrom(programSocket.sockFd, programMSG,BUFFER_SIZE-1,MSG_DONTWAIT, (struct sockaddr *)&programSocket.sock_addr,&programSocket.addrLen);
-        if (programBytes < 0 && errno != EAGAIN){
+        programBytes = recvfrom(programSocket.sockFd, programMSG, BUFFER_SIZE - 1, MSG_DONTWAIT, (struct sockaddr *)&programSocket.sock_addr, &programSocket.addrLen);
+        if (programBytes < 0 && errno != EAGAIN)
+        {
             stop("error while recieving data from program");
         }
-        else{
+        else
+        {
             // clientStatus = 1;
-            if (sendto(serverSocket.sockFd, programMSG, BUFFER_SIZE-1, 0, (struct sockaddr *)&client_sa, len) < 0){
+            if (sendto(serverSocket.sockFd, programMSG, BUFFER_SIZE - 1, 0, (struct sockaddr *)&client_sa, len) < 0)
+            {
                 stop("Error while sending data to instance");
             }
             bzero(programMSG, BUFFER_SIZE + 1);
         }
-    }
+    }*/
+    
     return EXIT_SUCCESS;
 }

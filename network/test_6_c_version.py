@@ -4,34 +4,76 @@ import pickle
 import os
 import subprocess
 
-"""
-print("Créer une partie 'c' ou  rejoindre une partie 'r' \n")
-corj = input()
 
-if corj == 'r' :
-    print("Entrée une adresse IP à join\n")
-    ip = input()
-    print("Entrée un port \n")
-    port = input()
+LOCALHOSTIP  = "127.0.0.1"
+LOCALHOSTPORT = 5005
+
+def intializeProgramSocket():
+    print("NetworkEngine init START")
+    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    sock.bind((LOCALHOSTIP,LOCALHOSTPORT))
+    sock.setblocking(0)
+    print("Socket opened")
+    return sock
+
+def programHandshake(programSocket):
+    while 1:
+        try: 
+            data, addr = programSocket.recvfrom(20)
+            if (data == "PROG_CONNECT_OK; ; "):
+                try:
+                    programSocket.sendto(bytes(f"OK_200; ; ",'utf-8'),addr)
+                    print("Network init END")
+                    return addr
+                except:
+                    
+                    print("ERROR WHILE SENDING BACK DATA")
+        except :
+            print("ERROR WHILE COMMUNICATING WITH PROGRAM")
+
+
+print("Créer une partie 'n' ou  rejoindre une partie 'j' \n")
+
+##### BOUCLE INITIALISATION #####
+corj = input()
+DEST_IP = "NONE"
+DEST_PORT = -1
+if corj == 'j' :
+    print("Entrez une adresse IP à join\n")
+    DEST_IP = input()
+    print("Entrez un port \n")
+    DEST_PORT = input()
 
 else :
-    print("Entrée un port \n")
+    print("Entrez un port \n")
     port = input()
 
 
+programSocket = intializeProgramSocket()
 
+try:
+    # Le subprocess.run ici est pour linux/macos, à changer pour windows
+    subprocess.run(["./networkEngine", "j",f"{DEST_IP}",f"{DEST_PORT}"], check=True)
+except FileNotFoundError:
+    print("Erreur : 'networkEngine' introuvable.")
+except subprocess.CalledProcessError as e:
+    print(f"Erreur lors de l'exécution de 'networkEngine' : {e}")
 
-"""
+programADDR = programHandshake(programSocket=programSocket)
+
+##### FIN BOUCLE INITIALISATION #####
 
 UDP_IP_MAX = "192.168.128.250" #192.168.128.254
 UDP_PORT = 5005
-UDP_IP_ETAN = "192.168.128.254" #192.168.128.250
+UDP_IP_ETAN = "192.168.128.250" #192.168.128.250
+
+
+
 
 #MESSAGE = b"Hello, World!"
 
 global compteur
 compteur = 0
-tab = [1,0,0,0]
 
 def ajouter(i):
     global compteur
@@ -41,12 +83,13 @@ def decoupe(string):
     return string.split(";")
 
 def deplacer(i): 
+    global message
     if i+1 >3 :
-        tab[i] = 0
-        tab[0] = 1
+        message[i] = 0
+        message[0] = 1
     else :
-        tab[i] = 0 
-        tab[i+1] = 1
+        message[i] = 0 
+        message[i+1] = 1
 
 def get_file_size(file_path):
     """Retourne la taille du fichier en octets."""
@@ -59,16 +102,10 @@ def get_file_size(file_path):
         return None
     
 # ENVOI DE LA REQUETE DE CONNEXION AU CREATEUR DE LA PARTIE
-"""
-try:
-    subprocess.run(["./network/networkEngine", "j"], check=True)
-except FileNotFoundError:
-    print("Erreur : 'networkEngine' introuvable.")
-except subprocess.CalledProcessError as e:
-    print(f"Erreur lors de l'exécution de 'networkEngine' : {e}")
-"""
+
+
 request = 0
-while not(request) : 
+while not(request) :
     UDP_IP_ETAN = input("Entrez l'IP du créateur de la partie:")
 
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -95,49 +132,71 @@ while not(request) :
 # RECEVOIR LE FICHIER CONTENANT LE MONDE
 
 receive = 0
+message = ""
 while not(receive) : 
     try:
-            message = sock.recvfrom(1024)
+            data,addr = sock.recvfrom(1024)
+            message = pickle.loads(data)
             print("received message: %s" % message)
-
-            try:
-                fun,ip,port = decoupe(message.decode('utf-8'))
-            except:
-                fun = "ERROR"
-
-            if fun == "START_GAME" :
+            if message:
                 receive = 1
-                sock.sendto(bytes(f"GAME_STARTED;;",'utf-8'), (UDP_IP_ETAN, UDP_PORT))
+
+            sock.sendto(bytes(f"START_GAME;;",'utf-8'), (UDP_IP_ETAN, UDP_PORT))
+
+    except BlockingIOError:
+        pass
+
+#ATTENDRE LE GAME_STARTED
+
+start = 0
+while not(start) : 
+    try:
+            data, addr = sock.recvfrom(1024)
+            print("received message: %s" % data)
+            fun,ip,port = decoupe(data.decode('utf-8'))
+            
+            if fun == "GAME_STARTED" :
+                start = 1
+                print("Game started!! apatsu apatsu")
 
     except BlockingIOError:
         pass
 
 
-"""
-while True :
-    time.sleep(1)
-    i = tab.index(1)
-    deplacer(i)
-    print(tab)
-    sock.sendto(bytes(f"deplacer;{i}",'utf-8'), (UDP_IP_NOT_ME, UDP_PORT))
+count=0
+while True:
+    sock.sendto(b"ajouter;1", (UDP_IP_ETAN, UDP_PORT))
 
     try:
-        data, addr = sock.recvfrom(1024)
+        '''data, addr = sock.recvfrom(1024)
         print("received message: %s" % data)
         fun,val = decoupe(data.decode('utf-8'))
         
-        if fun == "ajouter" and val.isdigit():
-            ajouter(int(val))
+        if fun == "deplacer" and val.isdigit():
+            deplacer(int(val))'''
 
+        data, addr = sock.recvfrom(1024)
+        try:
+            data = pickle.loads(data)
+        except:
+            pass
+        print("Received message:", data)
+
+        try:
+            if data[0] == "deplacer":
+                deplacer(int(data[1]))
+        except IndexError:
+            print("message not indexable")
 
     except BlockingIOError:
         pass
-    print(compteur)
+
+    print("count:",count,end=" ")
+    print(message)
+    count+=1
+    time.sleep(1)
     
 
 print("UDP target IP: %s" % UDP_IP)
 print("UDP target port: %s" % UDP_PORT)
 print("message: %s" % MESSAGE)
-
-
-"""

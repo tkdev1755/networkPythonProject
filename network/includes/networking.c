@@ -100,8 +100,8 @@ networkStruct join_game(char * game_ip, unsigned int game_port){
     sock_to_send_srv.sin_addr.s_addr = inet_addr(game_ip);
 
     sock_localhost.sin_family = AF_INET;
-    sock_localhost.sin_addr.s_addr = "127.0.0.1";
-    sock_localhost.sin_port = 5005;
+    sock_localhost.sin_addr.s_addr = inet_addr(LOCALHOSTIP);
+    sock_localhost.sin_port = LOCALHOSTPORT;
 
     if(sendto(joinning_struct.sockFd, msg_to_send, 11, 0, (struct sockaddr *) &sock_to_send_srv, sizeof(sock_to_send_srv)) < 0){
         close(joinning_struct.sockFd);
@@ -109,7 +109,7 @@ networkStruct join_game(char * game_ip, unsigned int game_port){
         stop("Joinning the game failed : ");
     }
 
-    while ((received_bytes = recvfrom(joinning_struct.sockFd, received_msg, BUFFER_SIZE, 0, (struct sockaddr *) &joinning_struct.sock_addr, joinning_struct.addrLen)) > 0){
+    while ((received_bytes = recvfrom(joinning_struct.sockFd, received_msg, BUFFER_SIZE, 0, (struct sockaddr *) &joinning_struct.sock_addr, &joinning_struct.addrLen)) > 0){
         if(fwrite(received_msg, sizeof(char), received_bytes, file) < 0){
             fclose(file);
             close(joinning_struct.sockFd);
@@ -130,7 +130,7 @@ networkStruct initializeListenSocket(){
     networkStruct ntStruct;
     bzero(&(ntStruct.sock_addr), sizeof(struct sockaddr_in));
     struct sockaddr_in server_sa;
-    int udpserverfd = udpserver(&server_sa, SERVERPORT, getip("eth0"));
+    int udpserverfd = udpserver(&server_sa, SERVERPORT, getip(INTERFACE));
 
     ntStruct.addrLen = sizeof(server_sa);
     ntStruct.sock_addr = server_sa;
@@ -140,20 +140,31 @@ networkStruct initializeListenSocket(){
 }
 
 networkStruct initializeProgramSocket(){
+    printf("Initializing Program socket\n");
     networkStruct ntStruct;
     bzero(&(ntStruct.sock_addr), sizeof(struct sockaddr_in));
     struct sockaddr_in program_sa; 
-
     ntStruct.addrLen = sizeof(program_sa);
     ntStruct.sock_addr = program_sa;
     ntStruct.sockFd = udpclient(&program_sa, LOCALHOSTPORT, LOCALHOSTIP);
-
+    printf("Finished initializing program socket \n");
     return ntStruct;
 }
 
-int initializeProgramConnection(){
-    // Insérer ici le code d'initialisation de la communication avec le programme python
-    
+int initializeProgramConnection(networkStruct programSocket){
+    char* connectRequest = "PROG_CONNECT_OK; ; ";
+    int sentBytes = sendto(programSocket.sockFd,connectRequest,sizeof(connectRequest), 0, &programSocket.sock_addr, programSocket.addrLen);
+    if (sentBytes < 0){
+        stop("Error while initializing program");
+    }
+    bzero(connectRequest, BUFFER_SIZE+1);
+    int recievedBytes = recvfrom(programSocket.sockFd, connectRequest,BUFFER_SIZE,0,&programSocket.sock_addr, &programSocket.addrLen);
+    if (recievedBytes < 0){
+        stop("Error while getting ACK");
+    }    
+    else{
+        printf("Successfully initialized Program connection");
+    }
 }
 
 networkStruct createGame(struct sockaddr_in* cliAddr, int* len, networkStruct* programSocket){
@@ -183,7 +194,7 @@ networkStruct createGame(struct sockaddr_in* cliAddr, int* len, networkStruct* p
     }
     // Deuxième partie de la connexion - Lecture du fichier .pkl et Envoi du monde à la deuxième instance
     // Envoi de la commande au programme python
-    int sentData = sendto(programSocket->sockFd,instanceData, bytesRead, 0, (struct sockaddr*) &programSocket->sock_addr,&programSocket->addrLen);
+    int sentData = sendto(programSocket->sockFd,instanceData, bytesRead, 0, (struct sockaddr*) &programSocket->sock_addr,programSocket->addrLen);
     if (sentData < 0){
         stop("Error while sending command to program");
     }
@@ -194,11 +205,11 @@ networkStruct createGame(struct sockaddr_in* cliAddr, int* len, networkStruct* p
     if (bytesRead < 0){
         stop("Error while recieving data from program");
     }
-    if (!stnrcmp("ACCEPT", instanceData,6)){
+    if (!strncmp("ACCEPT", instanceData,6)){
         FILE* file = fopen("save","rb");
         char saveFile[BUFFER_SIZE+1];
-        while ((bytesRead = (instanceData, BUFFER_SIZE,1, file)) > 0){
-            bytesSend = sendto(listenPort.sockFd,instanceData, bytesRead, 0, (struct sockaddr*) cliAddr,len);
+        while ((bytesRead = fread(instanceData, BUFFER_SIZE,1, file)) > 0){
+            bytesSend = sendto(listenPort.sockFd,instanceData, bytesRead, 0, (struct sockaddr*) cliAddr,*len);
             if (bytesSend < 0){
                 stop("Error while sending data to program");
             }
@@ -220,7 +231,7 @@ networkStruct createGame(struct sockaddr_in* cliAddr, int* len, networkStruct* p
         }
     }
     // Envoi de la commande START_GAME au programme python
-    int bytesSend = sendto(programSocket->sockFd,instanceData, bytesRead, 0, &programSocket->sock_addr,&programSocket->addrLen);
+    bytesSend = sendto(programSocket->sockFd,instanceData, bytesRead, 0, &programSocket->sock_addr,programSocket->addrLen);
     if (bytesSend < 0){
         stop("Error while sending command to program");
     }

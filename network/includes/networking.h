@@ -6,6 +6,7 @@
 #define SERVERPORT 8000
 #define MAXLINE 2048
 #define LOCALHOSTIP "127.0.0.1"
+#define INTERFACE "en0"
 #include <sys/socket.h>
 #include <sys/select.h>
 #include <netinet/in.h>
@@ -79,7 +80,7 @@ networkStruct join_game(char * game_ip, unsigned int game_port);
 networkStruct initializeListenSocket();
 networkStruct initializeProgramSocket();
 networkStruct createGame(struct sockaddr_in* cliAddr, int* len, networkStruct* programSocket);
-int initializeProgramConnection();
+int initializeProgramConnection(networkStruct programSocket);
 
 
 
