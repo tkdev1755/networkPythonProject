@@ -19,6 +19,8 @@
 #include <errno.h>
 #include <sys/types.h>
 
+extern int stdoutFD;
+
 struct networkStruct {
     int sockFd;
     struct sockaddr_in sock_addr;
@@ -47,6 +49,7 @@ typedef struct networkStruct networkStruct;
 
 // int tcpserver(struct sockaddr_in * sa, int port, char * ip, struct linger* so_linger_opt);
 // int tcpclient(struct sockaddr_in * server_sa, int port, char * ip, struct linger* so_linger_opt);
+void changeSTDOut(char* filename);
 
 int udpserver(struct sockaddr_in * server_sa, int port, char * ip);
 int udpclient(struct sockaddr_in * server_sa, int port, char * ip);

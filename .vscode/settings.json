@@ -1,5 +1,6 @@
 {
     "files.associations": {
-        "networking.h": "c"
+        "networking.h": "c",
+        "types.h": "c"
     }
 }

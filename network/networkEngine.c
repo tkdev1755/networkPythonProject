@@ -59,7 +59,7 @@ int main(int argc, char *argv[]){
     write(1,"[NetworkEngine] Starting Network Engine \n",42);
     //char *ip = getip("eth0"); //ip of my eth0 interface
     struct sockaddr_in client_sa, localhost_sa;
-    socklen_t len = sizeof(client_sa);
+    //socklen_t len = sizeof(client_sa);
     int clientBytes = 0;
     // int clientStatus = 0; // Représente si le client est en train de transmettre des bytes ou en train d'en recevoir, n'est pas utilisé pour le moment 
     int programBytes = 0;
@@ -88,10 +88,9 @@ int main(int argc, char *argv[]){
         default:
             printf("Option inconnue : %s\n", option);
             break;
+        }
     }
 
-            
-/*
     while (1)
     {
         // Attente d'une commande de la part d'un autre client;
@@ -127,7 +126,7 @@ int main(int argc, char *argv[]){
             }
             bzero(programMSG, BUFFER_SIZE + 1);
         }
-    }*/
+    }
     
     return EXIT_SUCCESS;
 }

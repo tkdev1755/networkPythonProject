@@ -2,10 +2,16 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <unistd.h>
+#include <fcntl.h>
 
+int stdoutFD = 1;
 void stop( char* msg ){
   perror(msg);
   exit(EXIT_FAILURE);
+}
+
+void changeSTDOut(char* filename){
+    stdoutFD = open(filename,O_APPEND);
 }
 
 void closeAll(int *tab, int number_of_socket){
@@ -208,15 +214,16 @@ networkStruct createGame(struct sockaddr_in* cliAddr, int* len, networkStruct* p
     while (CONNECTION_REQUEST == 0){
         bytesRead = recvfrom(listenPort.sockFd,instanceData,MSG_DONTWAIT, BUFFER_SIZE, (struct sockaddr*) cliAddr, len);
         if (bytesRead < 0 && errno != EAGAIN){
+            write(stdoutFD,"Error while recieving data from instance",41);
             stop("Error while recieving data from instance");
         }
         else {
             if (bytesRead > 0 && !strncmp("CONNECT",instanceData,7)){
-                printf("Recieved Connection request");
+                write(stdoutFD,"Recieved Connection request\n",29);
                 CONNECTION_REQUEST = 1;
             }
             else{
-                printf("Shouldn't get this command");
+                write(stdoutFD,"Shouldn't get this command",27);
             }
         }
     }
@@ -224,6 +231,7 @@ networkStruct createGame(struct sockaddr_in* cliAddr, int* len, networkStruct* p
     // Envoi de la commande au programme python
     int sentData = sendto(programSocket->sockFd,instanceData, bytesRead, 0, (struct sockaddr*) &programSocket->sock_addr,programSocket->addrLen);
     if (sentData < 0){
+        write(stdoutFD,"Error while sending command to program\n", 37);
         stop("Error while sending command to program");
     }
 
@@ -231,6 +239,7 @@ networkStruct createGame(struct sockaddr_in* cliAddr, int* len, networkStruct* p
 
     bytesRead = recvfrom(programSocket->sockFd, instanceData, BUFFER_SIZE, 0, (struct sockaddr*) &programSocket->sock_addr, &programSocket->addrLen);
     if (bytesRead < 0){
+        write(stdoutFD,"Error while recieving data from program\n", 41);
         stop("Error while recieving data from program");
     }
     if (!strncmp("ACCEPT", instanceData,6)){
@@ -239,6 +248,7 @@ networkStruct createGame(struct sockaddr_in* cliAddr, int* len, networkStruct* p
         while ((bytesRead = fread(instanceData, BUFFER_SIZE,1, file)) > 0){
             bytesSend = sendto(listenPort.sockFd,instanceData, bytesRead, 0, (struct sockaddr*) cliAddr,*len);
             if (bytesSend < 0){
+                write(stdoutFD,"Error while sending data to program\n", 37);
                 stop("Error while sending data to program");
             }
         }
@@ -251,10 +261,11 @@ networkStruct createGame(struct sockaddr_in* cliAddr, int* len, networkStruct* p
     while (START_GAME == 0){
         bytesRead = recvfrom(listenPort.sockFd, instanceData, BUFFER_SIZE, MSG_DONTWAIT, (struct sockaddr*) cliAddr, len );
         if (bytesRead < 0 && errno != EAGAIN){
+            write(stdoutFD,"ERRO While recieving data from instance\n", 41);
             stop("Error while recieving data from instance");
         }
         else if (bytesRead > 0 && !strncmp("START_GAME",instanceData,10)){
-            printf("Sent successfully the pkl FILE, time to start game");
+            write(stdoutFD,"Sent successfully the pkl FILE, time to start game\n",52);
             START_GAME = 1;
         }
     }
