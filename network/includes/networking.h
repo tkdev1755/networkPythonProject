@@ -50,7 +50,19 @@ typedef struct networkStruct networkStruct;
 int udpserver(struct sockaddr_in * server_sa, int port, char * ip);
 int udpclient(struct sockaddr_in * server_sa, int port, char * ip);
 char * getip(const char * interface);
+networkStruct join_game(char * game_ip, unsigned int game_port);
 
+
+
+// void initializeCliList(selectStruct* sStruct);
+
+// void initializeMasterSocket(selectStruct* sStruct, networkStruct* ntStruct);
+
+// int clearFDSets(selectStruct* sStruct);
+
+// int updateFDSets(selectStruct* sStruct);
+
+// int checkForNewConnection(selectStruct* sStruct);
 
 // void initializeCliList(selectStruct* sStruct);
 
@@ -66,7 +78,7 @@ char * getip(const char * interface);
 
 networkStruct initializeListenSocket();
 networkStruct initializeProgramSocket();
-networkStruct createGame();
+networkStruct createGame(struct sockaddr_in* cliAddr, int* len, networkStruct* programSocket);
 int initializeProgramConnection();
 
 
