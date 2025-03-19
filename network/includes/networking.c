@@ -154,7 +154,6 @@ networkStruct initializeProgramSocket(){
 
 int initializeProgramConnection(networkStruct programSocket){
     write(1,"Began Program Connection\n", 26);
-    sleep(1);
     char connectRequest[BUFFER_SIZE+1];
     strncpy(connectRequest,"PROG_CONNECT_OK; ; ",20);
     int sentBytes = sendto(programSocket.sockFd,connectRequest,sizeof(connectRequest), 0, &programSocket.sock_addr, programSocket.addrLen);

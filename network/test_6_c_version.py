@@ -15,14 +15,13 @@ def intializeProgramSocket():
     print("NetworkEngine init START")
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     sock.bind((LOCALHOSTIP,LOCALHOSTPORT))
-    sock.setblocking(False)
+    sock.setblocking(True)
     print("Socket opened")
     return sock
 
 def programHandshake(programSocket):
     print("Started Handshake")
-    while 1:
-        try: 
+    try: 
             data, addr = programSocket.recvfrom(20)
             print("RECIEVED SOMETHING !")
             if (data == "PROG_CONNECT_OK; ; "):
@@ -32,9 +31,10 @@ def programHandshake(programSocket):
                     return addr
                 except BlockingIOError as e :
                     pass
-        except BlockingIOError as e:
-            print("Waiting to recieve DATA")
-            pass
+    except BlockingIOError as e:
+        print("Waiting to recieve DATA")
+        pass
+        
 
 
 
@@ -116,15 +116,9 @@ def get_file_size(file_path):
 
 request = 0
 while not(request) :
-    UDP_IP_ETAN = input("Entrez l'IP du créateur de la partie:")
-
-    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    sock.bind((UDP_IP_MAX,UDP_PORT))
-    sock.setblocking(0) #socket non bloquante
-
     try:
         #sock.sendto(b"coucou", (UDP_IP_ETAN, UDP_PORT))
-        sock.sendto(bytes(f"CONNECT;{UDP_IP_MAX};{UDP_PORT}",'utf-8'), (UDP_IP_ETAN, UDP_PORT))
+        programSocket.sendto(bytes(f"CONNECT; ; ",'utf-8'), programADDR)
         request = 1
     except BlockingIOError:
         pass
