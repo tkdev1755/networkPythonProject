@@ -2,6 +2,9 @@ import socket
 import time
 import pickle
 import os
+import subprocess
+import utils
+import asyncio
 from utils import NetworkEngine
 LOCALHOSTIP  = "127.0.0.1"
 LOCALHOSTPORT = 5005
@@ -12,26 +15,30 @@ def intializeProgramSocket():
     print("NetworkEngine init START")
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     sock.bind((LOCALHOSTIP,LOCALHOSTPORT))
-    sock.setblocking(False)
+    sock.setblocking(True)
     print("Socket opened")
     return sock
 
 def programHandshake(programSocket):
     print("Started Handshake")
-    while 1:
-        try:
+    try: 
             data, addr = programSocket.recvfrom(20)
-            print("RECEIVED SOMETHING !")
+            print("ADDR IS ", addr)
+            print("RECIEVED SOMETHING !")
             if (data == "PROG_CONNECT_OK; ; "):
                 try:
-                    programSocket.sendto(bytes(f"OK_200; ; ",'utf-8'),addr)
+                    programSocket.sendto(bytes(f"OK_200; ; ",'utf-8'),(addr[0],addr[1]))
                     print("Network init END")
+                    print(addr)
                     return addr
-                except BlockingIOError as e :
+                except Exception as e :
+                    print("ERREUR ?")
+                    return -1
                     pass
-        except BlockingIOError as e:
-            print("Waiting to recieve DATA")
-            pass
+    except BlockingIOError as e:
+        print("Waiting to recieve DATA")
+        pass
+        
 
 
 
@@ -57,14 +64,15 @@ programSocket = intializeProgramSocket()
 
 
 
-NetworkEngine.launch_c_program("./networkEngine","j", DEST_IP, DEST_PORT)
+networkEngine = NetworkEngine()
+process = networkEngine.launch_c_program("./networkEngine",["j",f"{DEST_IP}", f"{DEST_PORT}"])
 
-programADDR = programHandshake(programSocket=programSocket)
+programADDR = programHandshake(programSocket)
 
 
 print("Ended Program Handshake")
-if programADDR == -1: 
-    print("ERREUR lors de la réception du message de la part du C")
+if programADDR == -1 or programADDR == None:
+    print("ERREUR lors de la récéption du message de la part du C")
 ##### FIN BOUCLE INITIALISATION #####
 
 
@@ -112,15 +120,9 @@ def get_file_size(file_path):
 
 request = 0
 while not(request) :
-    UDP_IP_ETAN = input("Entrez l'IP du créateur de la partie:")
-
-    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    sock.bind((UDP_IP_MAX,UDP_PORT))
-    sock.setblocking(0) #socket non bloquante
-
     try:
         #sock.sendto(b"coucou", (UDP_IP_ETAN, UDP_PORT))
-        sock.sendto(bytes(f"CONNECT;{UDP_IP_MAX};{UDP_PORT}",'utf-8'), (UDP_IP_ETAN, UDP_PORT))
+        programSocket.sendto(bytes(f"CONNECT; ; ",'utf-8'), programADDR)
         request = 1
     except BlockingIOError:
         pass
@@ -139,61 +141,55 @@ while not(request) :
 
 receive = 0
 message = ""
-while not(receive) : 
-    try:
-            data,addr = sock.recvfrom(1024)
-            message = pickle.loads(data)
-            print("received message: %s" % message)
-            if message:
-                receive = 1
+try:
+    data,addr = programSocket.recvfrom(9)
+    print("received message: %s" % message)
+    if message == "PLAY ; ; " :
 
-            sock.sendto(bytes(f"START_GAME;;",'utf-8'), (UDP_IP_ETAN, UDP_PORT))
+        try:
+            with open("save", "wb") as f:
+                pickle.load(data, f)
+        except Exception as e:
+            print("ERROR while trying to open/load pickle file", e)
+            receive = -1
+        receive = 1
+    programSocket.sendto(bytes(f"START_GAME; ; ",'utf-8'), (UDP_IP_ETAN, UDP_PORT))
+except BlockingIOError:
+    pass
 
-    except BlockingIOError:
-        pass
+if receive == -1:
+    raise Exception("RECIEVE FAILED")
 
 #ATTENDRE LE GAME_STARTED
 
 start = 0
-while not(start) : 
-    try:
-            data, addr = sock.recvfrom(1024)
-            print("received message: %s" % data)
-            fun,ip,port = decoupe(data.decode('utf-8'))
-            
-            if fun == "GAME_STARTED" :
-                start = 1
-                print("Game started!! apatsu apatsu")
+try:
+        data, addr = programSocket.recvfrom(1024)
+        print("received message: %s" % data)
+        fun,ip,port = decoupe(data.decode('utf-8'))
 
-    except BlockingIOError:
-        pass
+        if fun == "GAME_STARTED" :
+            start = 1
+            print("Game started!! apatsu apatsu")
+
+except BlockingIOError:
+    pass
 
 
 count=0
 while True:
-    sock.sendto(b"ajouter;1", (UDP_IP_ETAN, UDP_PORT))
+    programSocket.sendto(b"ajouter;1", programADDR)
 
     try:
         '''data, addr = sock.recvfrom(1024)
         print("received message: %s" % data)
+        '''
+
+        data, addr = programSocket.recvfrom(1024)
         fun,val = decoupe(data.decode('utf-8'))
         
         if fun == "deplacer" and val.isdigit():
-            deplacer(int(val))'''
-
-        data, addr = sock.recvfrom(1024)
-        try:
-            data = pickle.loads(data)
-        except:
-            pass
-        print("Received message:", data)
-
-        try:
-            if data[0] == "deplacer":
-                deplacer(int(data[1]))
-        except IndexError:
-            print("message not indexable")
-
+            deplacer(int(val))
     except BlockingIOError:
         pass
 

@@ -80,7 +80,7 @@ networkStruct join_game(char * game_ip, unsigned int game_port);
 networkStruct initializeListenSocket();
 networkStruct initializeProgramSocket();
 networkStruct createGame(struct sockaddr_in* cliAddr, int* len, networkStruct* programSocket);
-int initializeProgramConnection(networkStruct programSocket);
+networkStruct initializeProgramConnection(networkStruct programSocket);
 
 
 

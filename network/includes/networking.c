@@ -118,7 +118,7 @@ networkStruct join_game(char * game_ip, unsigned int game_port){
         }
     }
 
-    if(sendto(joinning_struct.sockFd, "PLAY; ; ", 8, 0, (struct sockaddr *) &sock_localhost, sizeof(sock_localhost)) < 0){
+    if(sendto(joinning_struct.sockFd, "PLAY; ; ", 9, 0, (struct sockaddr *) &sock_localhost, sizeof(sock_localhost)) < 0){
         fclose(file);
         close(joinning_struct.sockFd);
         stop("Informing to start the game failed : ");
