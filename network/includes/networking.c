@@ -193,6 +193,7 @@ int initializeProgramConnection(networkStruct programSocket){
         write(1,"Sent conn request\n", 19);
         printf("Successfully initialized Program connection");
     }
+    return 0;
 }
 
 networkStruct createGame(struct sockaddr_in* cliAddr, int* len, networkStruct* programSocket){

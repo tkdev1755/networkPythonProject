@@ -10,6 +10,8 @@ LOCALHOSTIP  = "127.0.0.1"
 LOCALHOSTPORT = 5005
 
 
+def decoupe(string):
+    return string.split(";")
 
 def intializeProgramSocket():
     print("NetworkEngine init START")
@@ -22,14 +24,18 @@ def intializeProgramSocket():
 def programHandshake(programSocket):
     print("Started Handshake")
     try: 
-            data, addr = programSocket.recvfrom(20)
+            data, addr = programSocket.recvfrom(40)
             print("ADDR IS ", addr)
+            tempADDR = addr
             print("RECIEVED SOMETHING !")
-            if (data == "PROG_CONNECT_OK; ; "):
+            recievedData = data.decode('utf-8')
+            command,id,port = decoupe(recievedData)
+            if (command == "PROG_CONNECT_OK"):
+                print("PROGINIT OK")
                 try:
-                    programSocket.sendto(bytes(f"OK_200; ; ",'utf-8'),(addr[0],addr[1]))
+                    programSocket.sendto(bytes(f"OK_200; ; ",'utf-8'),addr)
                     print("Network init END")
-                    print(addr)
+                    print("ADDR IS ", tempADDR)
                     return addr
                 except Exception as e :
                     print("ERREUR ?")
@@ -38,6 +44,8 @@ def programHandshake(programSocket):
     except BlockingIOError as e:
         print("Waiting to recieve DATA")
         pass
+    except Exception as e:
+        print("ERROR !! : ",e)
         
 
 
@@ -93,8 +101,7 @@ def ajouter(i):
     global compteur
     compteur = compteur + i 
 
-def decoupe(string):
-    return string.split(";")
+
 
 def deplacer(i): 
     global message
@@ -119,6 +126,7 @@ def get_file_size(file_path):
 
 
 request = 0
+
 while not(request) :
     try:
         #sock.sendto(b"coucou", (UDP_IP_ETAN, UDP_PORT))
