@@ -23,6 +23,8 @@ from html_report import generate_html_report
 
 from IA import IA
 
+from zReseau import *
+
 # GameEngine Class
 class GameEngine:
     def __init__(self, game_mode, map_size, players, sauvegarde=False):
@@ -212,6 +214,10 @@ class GameEngine:
                             elif unit.target_position:
                                 target_x, target_y = unit.target_position
                                 action.move_unit(unit, target_x, target_y, self.get_current_time())
+                                #envoyer "Set;ID;Data" pour indiquer le nouvel emplacement
+                                send_message(create_message("Set", unit.id, unit.position))
+
+
                             elif unit.task == "gathering" or unit.task == "returning":
                                 action._gather(unit, unit.last_gathered, self.get_current_time())
                             elif unit.task == "marching":
