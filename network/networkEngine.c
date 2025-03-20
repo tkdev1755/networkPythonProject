@@ -63,12 +63,13 @@ int main() {
             }
 
             printf("%s\n", received_msg);
-            
+            printf("Sending to %s ...\n");
             if (sendingUpdate(localhost_sa, tolocalhostfd, received_msg, bytes_recu) == -1) {
                 close(udpserverfd);
                 close(tolocalhostfd);
                 stop("Sending to python program failed : ");
             }
+            printf("Sent succefully !\n");
         }
 
         // Vérifie si un événement est survenu sur le descripteur tolocalhostfd

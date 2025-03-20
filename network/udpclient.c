@@ -14,8 +14,8 @@ void stop( char* msg ){
 }
 
 void main(){
-    int port = 5005, len, bytes;
-    char *ip = "127.0.0.1";
+    int port = 8000, len, bytes;
+    char *ip = "172.21.146.126";
     char buffer[BUFFSIZE];
     char message[] = "CONNECT; ; ";
     int sockfd = socket(AF_INET, SOCK_DGRAM, 0);
