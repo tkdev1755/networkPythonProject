@@ -15,7 +15,7 @@ void stop( char* msg ){
 
 void main(){
     int port = 8000, len, bytes;
-    char *ip = "172.21.146.126";
+    char *ip = "192.168.1.108";
     char buffer[BUFFSIZE];
     char message[] = "CONNECT; ; ";
     int sockfd = socket(AF_INET, SOCK_DGRAM, 0);
@@ -31,7 +31,7 @@ void main(){
     
     size_t buff_size = BUFFSIZE - 1;
     while (1){
-        if(sendto(sockfd, message, sizeof(message), MSG_CONFIRM, (const struct sockaddr *)&sAddress, sizeof(sAddress)) < 0){
+        if(sendto(sockfd, message, sizeof(message), 0, (const struct sockaddr *)&sAddress, sizeof(sAddress)) < 0){
             close(sockfd);  
             stop("Erreur lors de l'envoi du message\n");
         }
@@ -42,6 +42,13 @@ void main(){
         }
         printf("%s\n", buffer);
         printf("Info emeteur\nIp : %s\n", inet_ntoa(sAddress.sin_addr));
+
+        // Ajouté l'envoi du START_GAME
+        char startCommand[] = "START_GAME";        
+        if(sendto(sockfd, startCommand, 15, 0, (const struct sockaddr *)&cAddress, sizeof(cAddress)) < 0){
+            close(sockfd);  
+            stop("Erreur lors de l'envoi du message\n");
+        }
         sleep(1);
     }
     close(sockfd);

@@ -20,9 +20,11 @@ try:
         print("RECIEVED DATA")
         print(data.decode("utf-8"))
         sock.sendto(bytes("ACCEPT; ; ",'utf-8'),addr) #cPort
-
+        print("SENT DATA")
+        data, addr = sock.recvfrom(40)
+        print("RECIEVED DATA")
 except:
-        PRINT("ERRROR")
+        print("ERRROR")
         
 
 
