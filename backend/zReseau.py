@@ -29,9 +29,11 @@ def interpret_message(message):
         move_by_id(id, data)
 
 #fonction pour déplacer un objet par son id, IL FAUDRA LA METTRE EN METHODE DE LA CLASSE GAME_ENGINE
-def move_by_id(id,position): #juste, remplace la position de l'unité d'id id par position 
-    for player in self.players: #cherche l'unité d'id id et s'arrête une fois trouvée
-        for unit in player.units:
-            if unit.id==id:
-                unit.position=position
-                return
+def move_by_id(self,id,position): #juste, remplace la position de l'unité d'id id par position 
+        for player in self.players: #cherche l'unité d'id id et s'arrête une fois trouvée
+            for unit in player.units:
+                if unit.id==id:
+                    unit.position=position
+                    return
+            #unité non trouvée, càd nouvelle unité
+            Unit.spawn_unit(None,Villager,position[0],position[1],self.players[0],self.map)

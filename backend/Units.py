@@ -96,9 +96,6 @@ class Unit:
         else:
             unit = unit_class
         
-
-
-        
         if (0 <= x < game_map.width and 
             0 <= y < game_map.height and 
             not (player.population >= player.max_population or 
