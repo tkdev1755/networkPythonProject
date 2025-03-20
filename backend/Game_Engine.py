@@ -88,6 +88,9 @@ class GameEngine:
         action, id, data=message.split(";")
         if action=="SetPosition":
             self.move_by_id(int(id), ptuple_to_tuple(data))
+        elif action=="SetUnit":
+            pos = ptuple_to_tuple(data)
+            Unit.spawn_unit(Villager,int(pos[0]),int(pos[1]),self.players[int(data[2])-1],self.map)
 
     def move_by_id(self,id,position): #juste, remplace la position de l'unité d'id id par position 
         for player in self.players: #cherche l'unité d'id id et s'arrête une fois trouvée
@@ -96,7 +99,7 @@ class GameEngine:
                     unit.position=position
                     return
             #unité non trouvée, càd nouvelle unité
-            Unit.spawn_unit(Villager,int(position[0]),int(position[1]),self.players[0],self.map)
+            Unit.spawn_unit(Villager,float(position[0]),float(position[1]),self.players[0],self.map)
 
     def run(self, stdscr):
         # Initialize the starting view position
@@ -215,6 +218,9 @@ class GameEngine:
                 #check for any messages received
                 message = create_message("SetPosition", self.players[0].units[0].id, (30,30))
                 self.interpret_message(message)
+                message2 = create_message("SetUnit",3,(32,32,2))
+                self.interpret_message(message2)
+                
 
                 #call the IA
                 if not self.is_paused and self.turn % 200 == 0 and self.IA_used == True: # Call the IA every 5 turns: change 0, 5, 10, 15, ... depending on lag

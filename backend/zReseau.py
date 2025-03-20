@@ -6,12 +6,8 @@
 
 
 
-print(tuple("(30,30)".split(",")))
-
-def ptuple_to_tuple(ptuple):
-    return tuple(map(int,ptuple[1:-1].split(",")))
-
-print(ptuple_to_tuple("(30,30)"))
+def ptuple_to_tuple(ptuple): #passe une string "(a,..,z)" en tuple (a,..,z)
+    return tuple(map(float,ptuple[1:-1].split(",")))
 
 #fonction pour créer un message
 def create_message(action, id, data):
@@ -24,6 +20,13 @@ def send_message(message,ip):
 #fonction pour recevoir un message par réseau ?
 def receive_message(): #peut être qu'il faudra mettre un argument pour l'ip ?
     pass
+
+if __name__ == "__main__":
+    print(tuple("(30.5,30.5)".split(",")))
+    print(ptuple_to_tuple("(30.5,30.5)"))
+    #create_message("SetUnit",id,(x,y,player,map))
+    #create_message("SetUnit",3,(32,32,2))
+    #Unit.spawn_unit(Villager,float(position[0]),float(position[1]),self.players[0],self.map)
 
 '''
 #fonction pour interpréter un message 
