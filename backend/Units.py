@@ -26,10 +26,9 @@ class Unit:
         self.frame_counter = 0 
         self.is_moving = False
         self.id = None
-        self.id_maker()
 
     def id_maker(self):
-        self.id = random.randint(0, 1000000000)
+        self.id = random.randint(0, 999999999)
 
     def __str__(self):
         return self.symbol  # Ensure the building is represented by just the symbol
