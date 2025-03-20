@@ -1,8 +1,4 @@
 #include "networking.h"
-#include <stdlib.h>
-#include <stdio.h>
-#include <unistd.h>
-#include <fcntl.h>
 
 int stdoutFD = 1;
 void stop( char* msg ){
@@ -54,7 +50,7 @@ int udpserver(struct sockaddr_in *server_sa, int port, char * ip){
     bzero(server_sa, sizeof(struct sockaddr_in));
     server_sa->sin_family = AF_INET;
     server_sa->sin_port = htons(port);
-    server_sa->sin_addr.s_addr = inet_addr(ip);
+    server_sa->sin_addr.s_addr = INADDR_ANY;
 
     if(bind(socketfd, (struct sockaddr *)server_sa, sizeof(struct sockaddr)) < 0){
         close(socketfd);
@@ -215,25 +211,25 @@ networkStruct initializeProgramSocket(){
     return ntStruct;
 }
 
-int initializeProgramConnection(networkStruct programSocket){
-    write(1,"Began Program Connection\n", 26);
-    char* connectRequest = "PROG_CONNECT_OK; ; ";
-    int sentBytes = sendto(programSocket.sockFd,connectRequest,20, 0, (struct sockaddr *) &programSocket.sock_addr, programSocket.addrLen);
-    if (sentBytes < 0){
-        stop("Error while initializing program");
-    }
-    write(1,"Sent conn request\n", 19);
-    bzero(connectRequest, BUFFER_SIZE+1);
-    int recievedBytes = recvfrom(programSocket.sockFd, connectRequest,BUFFER_SIZE,0, (struct sockaddr *)&programSocket.sock_addr, &programSocket.addrLen);
-    if (recievedBytes < 0){
-        stop("Error while getting ACK");
-    }    
-    else{
-        write(1,"Sent conn request\n", 19);
-        printf("Successfully initialized Program connection");
-    }
-    return 0;
-}
+// int initializeProgramConnection(networkStruct programSocket){
+//     write(1,"Began Program Connection\n", 26);
+//     char* connectRequest = "PROG_CONNECT_OK; ; ";
+//     int sentBytes = sendto(programSocket.sockFd,connectRequest,20, 0, (struct sockaddr *) &programSocket.sock_addr, programSocket.addrLen);
+//     if (sentBytes < 0){
+//         stop("Error while initializing program");
+//     }
+//     write(1,"Sent conn request\n", 19);
+//     bzero(connectRequest, BUFFER_SIZE+1);
+//     int recievedBytes = recvfrom(programSocket.sockFd, connectRequest,BUFFER_SIZE,0, (struct sockaddr *)&programSocket.sock_addr, &programSocket.addrLen);
+//     if (recievedBytes < 0){
+//         stop("Error while getting ACK");
+//     }    
+//     else{
+//         write(1,"Sent conn request\n", 19);
+//         printf("Successfully initialized Program connection");
+//     }
+//     return 0;
+// }
 
 networkStruct createGame(struct sockaddr_in* cliAddr, int* len, networkStruct* programSocket){
     int CONNECTION_REQUEST = 0;
@@ -281,17 +277,17 @@ networkStruct createGame(struct sockaddr_in* cliAddr, int* len, networkStruct* p
     }
     write(stdoutFD, instanceData,bytesRead);
     
-    if (!strncmp("ACCEPT; ; ", instanceData,11)){
-        write(stdoutFD, "COMMAND TREATED\n",17);
-        char saveFile[BUFFER_SIZE+1];
-        while ((bytesRead = fread(instanceData, BUFFER_SIZE,1, file)) > 0){
-            bytesSend = sendto(listenPort.sockFd,instanceData, bytesRead, 0, (struct sockaddr*) cliAddr,*len);
-            if (bytesSend < 0){
-                write(stdoutFD,"Error while sending data to program\n", 37);
-                stop("Error while sending data to program");
-            }
-        }
-    }   
+    // if (!strncmp("ACCEPT; ; ", instanceData,11)){
+    //     write(stdoutFD, "COMMAND TREATED\n",17);
+    //     char saveFile[BUFFER_SIZE+1];
+    //     while ((bytesRead = fread(instanceData, BUFFER_SIZE,1, file)) > 0){
+    //         bytesSend = sendto(listenPort.sockFd,instanceData, bytesRead, 0, (struct sockaddr*) cliAddr,*len);
+    //         if (bytesSend < 0){
+    //             write(stdoutFD,"Error while sending data to program\n", 37);
+    //             stop("Error while sending data to program");
+    //         }
+    //     }
+    // }   
     
     write(stdoutFD, "AFTER COMMAND TREATED\n",23);
     // DATA sauvegardé, début de l'envoi vers la machine distante (autre instance)
@@ -343,9 +339,10 @@ networkStruct createClientNetworkStruct(struct sockaddr_in cliSa,  socklen_t cli
     return cliStruct;
 }
 
-int sendingUpdate(networkStruct* dst,networkStruct* src, char* msg, size_t size){
 
-    int sentBytes = sendto(src->sockFd,msg, size, 0, &dst->sock_addr, dst->addrLen);
+int sendingUpdate(struct sockaddr_in dstFD, int srcFD, char* msg, size_t size){
+
+    int sentBytes = sendto(srcFD, msg, size, 0, (struct sockaddr *) &dstFD, (socklen_t) sizeof(dstFD));
 
     if (sentBytes < 0){
         return -1;
@@ -353,4 +350,57 @@ int sendingUpdate(networkStruct* dst,networkStruct* src, char* msg, size_t size)
     else{
         return 1;
     }
+
+}
+
+void catch(void){
+    exit(EXIT_SUCCESS);
+}
+
+int broadcast_sending(int udpserverfd, char * message, int len){
+// this code is written by Christian Toinard : christian.toinard(at)insa-cvl.fr
+// #define Message "Bonjour de Christian Toinard"
+
+    typedef void (*sighandler_t)(int);
+
+
+    signal(SIGINT,(sighandler_t)catch);
+
+	char buffer[BUFFER_SIZE];
+	struct ifconf ifc;
+	ifc.ifc_len= sizeof(buffer);
+	ifc.ifc_buf= buffer;
+    
+	int on = 1;
+
+	if(setsockopt(udpserverfd, SOL_SOCKET, SO_BROADCAST, &on, sizeof(on)) < 0)
+	{
+        close(udpserverfd);
+        stop("setcokopt failed, and broadcasting failed : ");
+	}
+
+	ioctl(udpserverfd, SIOCGIFCONF, (char*)&ifc);
+
+	struct ifreq *ifr;
+	ifr= ifc.ifc_req;
+
+	int n= ifc.ifc_len/sizeof(*ifr);
+	for(; --n >= 0 ; ifr++) {
+
+        ioctl(udpserverfd, SIOCGIFFLAGS, (char*)ifr);
+
+		if(((ifr->ifr_flags & IFF_UP) == 0) || (ifr->ifr_flags & IFF_LOOPBACK) || (ifr->ifr_flags & IFF_POINTOPOINT) || ((ifr->ifr_flags & IFF_BROADCAST) == 0)){
+            continue;
+        }
+
+		ioctl(udpserverfd, SIOCGIFBRDADDR, (char*)ifr);
+
+        struct sockaddr_in dst;
+        bcopy(&ifr->ifr_broadaddr, &dst, sizeof(ifr->ifr_broadaddr));
+        dst.sin_family = AF_INET;
+        dst.sin_port = htons(8000);
+        
+        sendingUpdate(dst, udpserverfd, message, len);
+	}
+	return 0;
 }
