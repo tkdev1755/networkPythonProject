@@ -873,3 +873,13 @@ def start_game(stdscr, save_file=None):
         )
 
     game_engine.run(stdscr)
+
+def start_mod_game ():
+    from Mod_Game_Engine import Mod_GameEngine
+    curses.curs_set(0)
+    curses.wrapper(lambda stdscr: Mod_GameEngine(
+                game_mode=GameMode,
+                map_size=map_size,
+                players=players,
+                sauvegarde=False
+            ).run(stdscr))

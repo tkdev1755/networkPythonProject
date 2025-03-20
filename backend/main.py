@@ -4,7 +4,8 @@ import argparse
 import curses
 import config
 from Players import Player
-#from Mod_Game_Engine import Mod_GameEngine
+import os
+from Starter_File import start_mod_game
 
 norj = input("Tape n pour créer une partie et j pour join :")
 
@@ -52,11 +53,6 @@ else :
                     )
     players.append(player1)
     players.append(player2)
-    curses.wrapper(lambda stdscr: Mod_GameEngine(
-                    game_mode=GameMode,
-                    map_size=map_size,
-                    players=players,
-                    sauvegarde=False
-                ).run(stdscr))
+    start_mod_game()
     
 
