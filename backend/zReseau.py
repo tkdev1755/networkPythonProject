@@ -22,7 +22,7 @@ def send_message(message,ip):
 def interpret_message(message):
     action, id, data=message.split(";")
     if action=="Set":
-        set(id, data)
+        move_by_id(id, data)
 
-def set(id, data):
-    pass
+def move_by_id(id,data):
+
