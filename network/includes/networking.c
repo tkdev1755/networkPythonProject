@@ -335,3 +335,23 @@ networkStruct createGame(struct sockaddr_in* cliAddr, int* len, networkStruct* p
     */
     return listenPort;
 }
+
+networkStruct createClientNetworkStruct(struct sockaddr_in cliSa,  socklen_t cliLen, int listenFD){
+    networkStruct cliStruct;
+    cliStruct.sockFd = listenFD;
+    cliStruct.sock_addr = cliSa;
+    cliStruct.addrLen = cliLen;
+    return cliStruct;
+}
+
+int sendingUpdate(networkStruct* dst,networkStruct* src, char* msg, size_t size){
+
+    int sentBytes = sendto(src->sockFd,msg, size, 0, &dst->sock_addr, dst->addrLen);
+
+    if (sentBytes < 0){
+        return -1;
+    }
+    else{
+        return 1;
+    }
+}

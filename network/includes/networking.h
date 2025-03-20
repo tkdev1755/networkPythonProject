@@ -84,8 +84,8 @@ networkStruct initializeListenSocket();
 networkStruct initializeProgramSocket();
 networkStruct createGame(struct sockaddr_in* cliAddr, int* len, networkStruct* programSocket);
 int initializeProgramConnection(networkStruct programSocket);
-
-
+int sendingUpdate(networkStruct* dst,networkStruct* src, char* msg, size_t size);
+networkStruct createClientNetworkStruct(struct sockaddr_in cliSa,  socklen_t cliLen, int listenFD);
 
 //select
 // int input_timeout(int fd, unsigned int seconds);
