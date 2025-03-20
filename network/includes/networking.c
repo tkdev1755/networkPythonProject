@@ -398,7 +398,7 @@ int broadcast_sending(int udpserverfd, char * message, int len){
         struct sockaddr_in dst;
         bcopy(&ifr->ifr_broadaddr, &dst, sizeof(ifr->ifr_broadaddr));
         dst.sin_family = AF_INET;
-        dst.sin_port = htons(8000);
+        dst.sin_port = htons(SERVERPORT);
         
         sendingUpdate(dst, udpserverfd, message, len);
 	}

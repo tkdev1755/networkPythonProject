@@ -9,13 +9,13 @@
 #define BUFFSIZE 100
 
 void stop( char* msg ){
-  printf("%s\n", msg);
+  perror(msg);
   exit(EXIT_FAILURE);
 }
 
 void main(){
-    int port = 8000, len, bytes;
-    char *ip = "192.168.167.171";
+    int port = 5005, len, bytes;
+    char *ip = "127.0.0.1";
     char buffer[BUFFSIZE];
     char message[] = "CONNECT; ; ";
     int sockfd = socket(AF_INET, SOCK_DGRAM, 0);
@@ -33,7 +33,7 @@ void main(){
     while (1){
         if(sendto(sockfd, message, sizeof(message), 0, (const struct sockaddr *)&sAddress, sizeof(sAddress)) < 0){
             close(sockfd);  
-            stop("Erreur lors de l'envoi du message\n");
+            stop("Erreur lors de l'envoi du message : ");
         }
         printf("Message sent !\n");
         if(bytes = recvfrom(sockfd, buffer, buff_size, 0, (struct sockaddr *) &cAddress, (socklen_t *)&len)<0){

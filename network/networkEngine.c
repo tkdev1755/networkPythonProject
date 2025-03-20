@@ -15,66 +15,86 @@ int main() {
     bzero(&localhost_sa, sizeof(struct sockaddr_in));
     bzero(received_msg, BUFFER_SIZE + 1);
 
-    int udpserverfd = udpserver(&server_sa, 8000, ip);
-    int tolocalhostfd = udpserver(&localhost_sa, 5000, LOCALHOSTIP);
+    int udpserverfd = udpserver(&server_sa, SERVERPORT, ip);
+    int tolocalhostfd = udpserver(&localhost_sa, LOCALHOSTPORT, LOCALHOSTIP);
 
-    localhost_sa.sin_family = AF_INET;
-    localhost_sa.sin_port = htons(5005);
-    localhost_sa.sin_addr.s_addr = inet_addr("127.0.0.1");
-
+    int client_socket[3], max_client = 3, max_sd, socket_descriptor, activity, i, read_bytes = 0;
+    for(int i = 0; i < max_client; i++){
+        client_socket[i] = 0;
+    }
+    fd_set readfds;
+    printf("Waiting for an update...\n");
     while (1) {
-        FD_ZERO(&tolocalhost);
-        FD_ZERO(&toserverfd);
+        FD_ZERO(&readfds);
 
-        FD_SET(udpserverfd, &toserverfd);
-        FD_SET(tolocalhostfd, &tolocalhost);
+        FD_SET(udpserverfd, &readfds); 
+        FD_SET(tolocalhostfd, &readfds);
+        max_sd = tolocalhostfd;
 
-        // select
-        selectfd = select((udpserverfd > tolocalhostfd ? udpserverfd : tolocalhostfd) + 1, &tolocalhost, &toserverfd, NULL, &timeout);
-        if (selectfd == -1) {
+
+        for(i = 0; i < max_client; i++){
+            socket_descriptor = client_socket[i];
+            if(socket_descriptor > 0){
+                FD_SET(socket_descriptor, &readfds);
+            }
+
+            if(socket_descriptor > max_sd){
+                max_sd = socket_descriptor;
+            }
+        }
+
+        if((activity = select(max_sd + 1, &readfds, NULL, NULL, &timeout)) < 0 && errno!=EINTR){
             close(udpserverfd);
             close(tolocalhostfd);
             stop("Select error : ");
-        } else if (selectfd) {
-            // check whether an activity occured on the server socket
-            if (FD_ISSET(udpserverfd, &toserverfd)) {
-                printf("Activity detected on udpserverfd\n");
+        }
 
-                if ((bytes_recu = recvfrom(udpserverfd, received_msg, BUFFER_SIZE - 1, MSG_DONTWAIT, (struct sockaddr *) &client_sa, (socklen_t *) sizeof(client_sa))) < 0 && errno != EAGAIN) {
-                    close(udpserverfd);
-                    close(tolocalhostfd);
-                    stop("Reception error on udpserverfd: ");
-                }
-                
-                
-                if(sendingUpdate(localhost_sa, tolocalhostfd, received_msg, bytes_recu) == -1){
-                    close(udpserverfd);
-                    close(tolocalhostfd);
-                    stop("Sending to python program failed : ");
-                }
+        
+        // Vérifie si un événement est survenu sur le descripteur udpserverfd
+        if (FD_ISSET(udpserverfd, &readfds)) {
+            printf("Activity detected on udpserverfd\n");
+
+            bytes_recu = recvfrom(udpserverfd, received_msg, BUFFER_SIZE - 1, MSG_DONTWAIT, (struct sockaddr *) &client_sa, (socklen_t *) &len);
+
+            if (bytes_recu < 0 && errno != EAGAIN) {
+                close(udpserverfd);
+                close(tolocalhostfd);
+                stop("Reception error on udpserverfd: ");
             }
 
-            // check whether an activity occured on the server socket
-            if (FD_ISSET(tolocalhostfd, &tolocalhost)) {
-                printf("Activity detected on tolocalhostfd\n");
-
-                if ((bytes_recu = recvfrom(tolocalhostfd, received_msg, BUFFER_SIZE - 1, MSG_DONTWAIT, (struct sockaddr *) &client_sa, &len)) < 0 && errno != EAGAIN) {
-                    close(tolocalhostfd);
-                    close(tolocalhostfd);
-                    stop("Reception error on tolocalhostfd: ");
-                }
-                printf("Sending %s to the other players in broadcast...\n");
-                if(broadcast_sending(udpserverfd, received_msg, bytes_recu) != 0){
-                    close(udpserverfd);
-                    close(tolocalhostfd);
-                    stop("Sending to python program failed : ");
-                }
-                printf("Broadcast sent !\n");
+            printf("%s\n", received_msg);
+            
+            if (sendingUpdate(localhost_sa, tolocalhostfd, received_msg, bytes_recu) == -1) {
+                close(udpserverfd);
+                close(tolocalhostfd);
+                stop("Sending to python program failed : ");
             }
+        }
+
+        // Vérifie si un événement est survenu sur le descripteur tolocalhostfd
+        if (FD_ISSET(tolocalhostfd, &readfds)) {
+            printf("Activity detected on tolocalhostfd\n");
+
+            bytes_recu = recvfrom(tolocalhostfd, received_msg, BUFFER_SIZE - 1, MSG_DONTWAIT, (struct sockaddr *) &client_sa, &len);
+
+            if (bytes_recu < 0 && errno != EAGAIN) {
+                close(tolocalhostfd);
+                stop("Reception error on tolocalhostfd: ");
+            }
+
+            printf("Sending %s to the other players in broadcast...\n");
+
+            if (broadcast_sending(udpserverfd, received_msg, bytes_recu) != 0) {
+                close(udpserverfd);
+                close(tolocalhostfd);
+                stop("Sending to python program failed : ");
+            }
+
+            printf("Broadcast sent !\n");
         }
     }
 
-    
+    closeAll(client_socket, max_client);
     close(udpserverfd);
     close(tolocalhostfd);
     return 0;
