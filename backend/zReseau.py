@@ -6,9 +6,12 @@
 
 
 
+print(tuple("(30,30)".split(",")))
 
+def ptuple_to_tuple(ptuple):
+    return tuple(map(int,ptuple[1:-1].split(",")))
 
-
+print(ptuple_to_tuple("(30,30)"))
 
 #fonction pour créer un message
 def create_message(action, id, data):
@@ -22,12 +25,14 @@ def send_message(message,ip):
 def receive_message(): #peut être qu'il faudra mettre un argument pour l'ip ?
     pass
 
+'''
 #fonction pour interpréter un message 
 def interpret_message(message):
     action, id, data=message.split(";")
-    if action=="Set":
-        move_by_id(id, data)
-
+    if action=="SetPosition":
+        move_by_id(id, (data,))
+'''
+'''
 #fonction pour déplacer un objet par son id, IL FAUDRA LA METTRE EN METHODE DE LA CLASSE GAME_ENGINE
 def move_by_id(self,id,position): #juste, remplace la position de l'unité d'id id par position 
         for player in self.players: #cherche l'unité d'id id et s'arrête une fois trouvée
@@ -37,3 +42,4 @@ def move_by_id(self,id,position): #juste, remplace la position de l'unité d'id 
                     return
             #unité non trouvée, càd nouvelle unité
             Unit.spawn_unit(None,Villager,position[0],position[1],self.players[0],self.map)
+'''

@@ -83,6 +83,21 @@ class GameEngine:
             return time.time()
         return self.current_time
 
+    #fonction pour interpréter un message 
+    def interpret_message(self,message):
+        action, id, data=message.split(";")
+        if action=="SetPosition":
+            self.move_by_id(int(id), ptuple_to_tuple(data))
+
+    def move_by_id(self,id,position): #juste, remplace la position de l'unité d'id id par position 
+        for player in self.players: #cherche l'unité d'id id et s'arrête une fois trouvée
+            for unit in player.units:
+                if unit.id==id:
+                    unit.position=position
+                    return
+            #unité non trouvée, càd nouvelle unité
+            Unit.spawn_unit(Villager,int(position[0]),int(position[1]),self.players[0],self.map)
+
     def run(self, stdscr):
         # Initialize the starting view position
         top_left_x, top_left_y = 0, 0
@@ -197,6 +212,10 @@ class GameEngine:
                     else:
                         self.debug_print("No save files found.")
 
+                #check for any messages received
+                message = create_message("SetPosition", self.players[0].units[0].id, (30,30))
+                self.interpret_message(message)
+
                 #call the IA
                 if not self.is_paused and self.turn % 200 == 0 and self.IA_used == True: # Call the IA every 5 turns: change 0, 5, 10, 15, ... depending on lag
                     for ia in self.ias:
@@ -215,7 +234,7 @@ class GameEngine:
                                 target_x, target_y = unit.target_position
                                 action.move_unit(unit, target_x, target_y, self.get_current_time())
                                 #envoyer "Set;ID;Data" pour indiquer le nouvel emplacement
-                                send_message(create_message("Set", unit.id, unit.position))
+                                #send_message(create_message("Set", unit.id, unit.position))
 
 
                             elif unit.task == "gathering" or unit.task == "returning":
