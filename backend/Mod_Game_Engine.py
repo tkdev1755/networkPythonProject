@@ -80,17 +80,28 @@ class Mod_GameEngine:
     
     def interpret_message(self,message):
         action, id, data=message.split(";")
-        if action=="SetPosition":
-            self.move_by_id(int(id), ptuple_to_tuple(data))
-        elif action=="SetUnit":
-            pos = ptuple_to_tuple(data)
-            newguy = Unit.spawn_unit(Villager,int(pos[0]),int(pos[1]),self.players[int(data[2])-1],self.map)
-            newguy.id = int(id)
+        if action=="SetUnit":
+            self.move_by_id(int(id),ptuple_to_tuple(data))
+           
+
+    def move_by_id(self,id,data): #juste, remplace la position de l'unité d'id id par position 
+        pos = (data[0],data[1])
+        for player in self.players:
+            if player.id == data[2] :
+                for unit in player.units :
+                    if unit.id == id :
+                        unit.position = pos
+                        return
+                    
+        newguy =Unit.spawn_unit(Villager,int(pos[0]),int(pos[1]),self.players[int(data[2])-1],self.map)
+        newguy.id = int(id)
 
     def run(self, stdscr):
         # Initialize the starting view position
         top_left_x, top_left_y = 0, 0
         viewport_width, viewport_height = 30, 30
+
+        
 
         ######
         # SOCKET ??????????
