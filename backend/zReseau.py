@@ -21,6 +21,18 @@ def send_message(message,ip):
 def receive_message(): #peut être qu'il faudra mettre un argument pour l'ip ?
     pass
 
+import socket
+
+UDP_IP_MAX = ""
+UDP_IP_ETAN = ""
+UDP_PORT = 5005
+
+def create_socket():
+    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    sock.bind((UDP_IP_MAX,UDP_PORT))
+    sock.setblocking(0) #socket non bloquante
+    return sock
+
 if __name__ == "__main__":
     print(tuple("(30.5,30.5)".split(",")))
     print(ptuple_to_tuple("(30.5,30.5)"))

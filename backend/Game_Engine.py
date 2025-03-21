@@ -217,10 +217,10 @@ class GameEngine:
                         self.debug_print("No save files found.")
 
                 #check for any messages received
-                message = create_message("SetPosition", self.players[0].units[0].id, (30,30))
-                self.interpret_message(message)
-                message2 = create_message("SetUnit",3,(32,32,2))
-                self.interpret_message(message2)
+                #message = create_message("SetPosition", self.players[0].units[0].id, (30,30))
+                #self.interpret_message(message)
+                #message2 = create_message("SetUnit",3,(32,32,2))
+                #self.interpret_message(message2)
                 
 
                 #call the IA
