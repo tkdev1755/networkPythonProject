@@ -69,6 +69,9 @@ class Map:
                             self.resources["Gold"].append((x, y))  # Store the position of Gold resources
                         break  # Exit the loop once a valid position is found
 
+        elif GameMode == "Empty":
+            pass
+
 
         # Wood Generation
         num_wood = (num_resources - num_gold) // 10  # Remaining resource tiles as wood --> increase the '15' for less forests
