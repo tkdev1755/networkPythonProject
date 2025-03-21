@@ -7,6 +7,9 @@ from backend.Starter_File import players as players_list
 from logger import debug_print
 from Starter_File import global_speedS
 
+global IDMAKERB
+IDMAKERB = 1000
+
 # Building Class
 class Building:
     global_speed = global_speedS
@@ -24,6 +27,10 @@ class Building:
         self.nb_workers = None # Number of workers for the building --> impact building time
         self.max_hp = hp
         self.is_attacked = False
+        self.is_sent = False
+        global IDMAKERB
+        self.id = IDMAKERB
+        IDMAKERB += 1
 
     def __str__(self):
         return self.symbol  # Ensure the building is represented by just the symbol
@@ -91,6 +98,8 @@ class Building:
         game_map.place_building(x, y, building)  # Use the passed map instead of cls.map
         player.buildings.append(building)  # Add the building to the player's list of buildings
         #debug_print(f"Building {building.name} belonging to {player.name} at ({x}, {y}) spawned.")
+
+
 
     @classmethod
     def kill_building(cls, player, building_to_kill, game_map):

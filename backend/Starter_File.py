@@ -855,7 +855,7 @@ def start_menu(save_file=None):
 
 def start_game(stdscr, save_file=None):
     
-
+    print("import sans soucis ")
     from Game_Engine import GameEngine
     curses.curs_set(0)
     stdscr.clear()

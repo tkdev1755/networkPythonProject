@@ -263,6 +263,14 @@ class GameEngine:
                             elif unit.task == "constructing":
                                 action._construct(unit, unit.construction_type, unit.target_building[0], unit.target_building[1], player, self.get_current_time())
                         for building in player.buildings:
+                            #si le building n'a jamais été envoyé et est construit, l'envoyer
+                            print(building.is_sent,building.built,end=" / ")
+                            if (not building.is_sent) and building.built : #action,id,(player.id,name,x,y)
+                                message=create_message("SetBuilding", building.id, (building.player.id,building.name,building.position[0],building.position[1]))
+                                send_message(message,sock)
+                                building.is_sent = True
+                                print(message)
+
                             if hasattr(building, 'training_queue') and building.training_queue != []:
                                 unit = building.training_queue[0]
                                 Unit.train_unit(unit, unit.spawn_position[0], unit.spawn_position[1], player, unit.spawn_building, self.map, self.get_current_time())
