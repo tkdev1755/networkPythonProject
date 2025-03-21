@@ -181,8 +181,9 @@ class Mod_GameEngine:
                         self.debug_print("Game resumed.")
 
                 elif key == ord('n'):
-                    self.IA_used = not self.IA_used
-                    self.debug_print(f"IA used: {self.IA_used}")
+                    """self.IA_used = not self.IA_used
+                    self.debug_print(f"IA used: {self.IA_used}")"""
+                    pass
 
                 elif key == curses.KEY_F10: 
                     self.save_game()
