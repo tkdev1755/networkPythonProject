@@ -25,6 +25,9 @@ from IA import IA
 
 from zReseau import *
 
+
+
+
 # GameEngine Class
 class Mod_GameEngine:
     def __init__(self, game_mode, map_size, players, sauvegarde=False):
@@ -35,13 +38,20 @@ class Mod_GameEngine:
         self.turn = 0
         self.is_paused = False  # Flag to track if the game is paused
         self.changed_tiles = set()  # Set to track changed tiles
-        
+        """
+        self.ias = [IA(player, player.ai_profile, self.map, time.time()) for player in self.players]  # Instantiate IA for each player
+        for i in range(len(self.players)):
+            self.players[i].ai = self.ias[i]
+        self.IA_used = False
 
         # Sauvegarde related attributes
-        """if not sauvegarde:
+        
+        if not sauvegarde:
             Building.place_starting_buildings(self.map)   # Place starting town centers on the map
             Unit.place_starting_units(self.players, self.map)  # Place starting units on the map
-        """
+       """
+        
+        
         self.debug_print = debug_print
         self.current_time = time.time()
 
@@ -51,6 +61,19 @@ class Mod_GameEngine:
         self.gui_running = False
         self.data_queue = Queue()
         self.gui_thread = None
+
+    def custom_spawn (self,pos,joueur_id):
+        print(self.players)
+        for player in self.players :
+            print(player.id, joueur_id)
+            if player.id == joueur_id:
+                unit = Villager(player,(pos[0],pos[1]))
+                player.units.append(unit)
+                unit.position = (pos[0],pos[1])
+                player.population += 1
+                self.map.place_unit(int(pos[0]),int(pos[1]), unit)
+                print("I return unit")
+                return unit
 
     def start_gui_thread(self):
         """Initialize and start the GUI thread"""
@@ -79,22 +102,29 @@ class Mod_GameEngine:
         return self.current_time
     
     def interpret_message(self,message):
+        message = message.decode('utf-8')
         action, id, data=message.split(";")
         if action=="SetUnit":
+            print("starting move by id")
             self.move_by_id(int(id),ptuple_to_tuple(data))
            
 
     def move_by_id(self,id,data): #juste, remplace la position de l'unité d'id id par position 
         pos = (data[0],data[1])
         for player in self.players:
-            if player.id == data[2] :
+            #if player.id == data[2] :
                 for unit in player.units :
                     if unit.id == id :
                         unit.position = pos
+                        print("J'ai bougé",end=" ")
                         return
-                    
-        newguy =Unit.spawn_unit(Villager,int(pos[0]),int(pos[1]),self.players[int(data[2])-1],self.map)
-        newguy.id = int(id)
+        try:          
+            #newguy = Unit.spawn_unit(Villager,int(pos[0]),int(pos[1]),self.players[int(data[2])-1],self.map)
+            newguy = self.custom_spawn(pos,int(data[2]))
+            newguy.id = int(id)
+            print("Unit had spawned") 
+        except AttributeError:
+            print("Attribut error")
 
     def run(self, stdscr):
         # Initialize the starting view position
@@ -115,7 +145,7 @@ class Mod_GameEngine:
             self.map.display_viewport(stdscr, top_left_x, top_left_y, viewport_width, viewport_height, Map_is_paused=self.is_paused)  # Display the initial viewport
 
         try:
-            while not self.check_victory():
+            while 1:
                 # Mettre à jour current_time au début de chaque itération si le jeu n'est pas en pause
                 if not self.is_paused:
                     self.current_time = time.time()
@@ -231,7 +261,7 @@ class Mod_GameEngine:
                     try:
                         data, addr = sock.recvfrom(1024)
                         print("received message: %s" % data)
-                        self.interpret_message(data.decode('utf-8'))
+                        self.interpret_message(data)
 
                     except BlockingIOError:
                         pass

@@ -24,7 +24,7 @@ class Player:
             self.owned_resources = self.Marines_starting_resources
         
     def __str__(self):
-        return f"{self.name} ({self.civilization})"
+        return f"{self.name} ({self.civilization}) {self.units}"
 
     def take_turn(self, game_map):
         self.ai_profile.make_decision(self, game_map)

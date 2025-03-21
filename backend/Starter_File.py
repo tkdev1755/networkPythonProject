@@ -879,26 +879,26 @@ def start_game(stdscr, save_file=None):
     game_engine.run(stdscr)
 
 def start_mod_game ():
-    
+    players.clear()
     print("Répertoire actuel :", os.getcwd())
     from Mod_Game_Engine import Mod_GameEngine
     P1 = Player(
-                        f'Player 1',
-                        'Marines',
-                        'aggressive',
-                        player_id=1
+                f'Player 1',
+                'Marines',
+                'aggressive',
+                player_id=1
                     )
     players.append(P1)
     P2 = Player(
-                        f'Player 2',
-                        'Marines',
-                        'aggressive',
-                        player_id=2
+                f'Player 2',
+                'Marines',
+                'aggressive',
+                player_id=2
                     )
     players.append(P2)
 
     curses.wrapper(lambda stdscr: Mod_GameEngine(
-                game_mode=GameMode,
+                game_mode="Empty",
                 map_size=map_size,
                 players=players,
                 sauvegarde=False
