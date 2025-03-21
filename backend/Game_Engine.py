@@ -112,6 +112,9 @@ class GameEngine:
         if self.terminalon :
             self.map.display_viewport(stdscr, top_left_x, top_left_y, viewport_width, viewport_height, Map_is_paused=self.is_paused)  # Display the initial viewport
 
+        #Creates a socket
+        sock = create_socket()
+
         try:
             while not self.check_victory():
                 # Mettre à jour current_time au début de chaque itération si le jeu n'est pas en pause
@@ -241,7 +244,7 @@ class GameEngine:
                                 target_x, target_y = unit.target_position
                                 action.move_unit(unit, target_x, target_y, self.get_current_time())
                                 #envoyer "Set;ID;Data" pour indiquer le nouvel emplacement
-                                send_message(create_message("Set", unit.id, unit.position),"127.0.0.1")
+                                send_message(create_message("SetPosition", unit.id, unit.position),sock)
 
 
                             elif unit.task == "gathering" or unit.task == "returning":
