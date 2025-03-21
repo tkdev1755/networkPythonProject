@@ -38,10 +38,10 @@ class Mod_GameEngine:
         
 
         # Sauvegarde related attributes
-        if not sauvegarde:
+        """if not sauvegarde:
             Building.place_starting_buildings(self.map)   # Place starting town centers on the map
             Unit.place_starting_units(self.players, self.map)  # Place starting units on the map
-        
+        """
         self.debug_print = debug_print
         self.current_time = time.time()
 

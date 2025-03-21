@@ -3,6 +3,7 @@ import pygame
 import sys
 import curses
 import os
+import time
 from Players import *
 
 
@@ -790,7 +791,12 @@ def start_menu(save_file=None):
             return start_menu(save_file)
         elif settings:
             # Import GameEngine at the start
+            print("Répertoire actuel :", os.getcwd())
+            print("import sans soucis ")
+            time.sleep(2)
             from Game_Engine import GameEngine
+            print("import sans soucis2 ")
+            time.sleep(2)
             
             # Update global settings
             global GameMode, map_size, players
@@ -852,6 +858,9 @@ def start_menu(save_file=None):
         sys.exit()
 
 def start_game(stdscr, save_file=None):
+    
+    print("import sans soucis ")
+    time.sleep(2)
     from Game_Engine import GameEngine
     curses.curs_set(0)
     stdscr.clear()
@@ -875,8 +884,24 @@ def start_game(stdscr, save_file=None):
     game_engine.run(stdscr)
 
 def start_mod_game ():
+    
+    print("Répertoire actuel :", os.getcwd())
     from Mod_Game_Engine import Mod_GameEngine
-    curses.curs_set(0)
+    P1 = Player(
+                        f'Player 1',
+                        'Marines',
+                        'aggressive',
+                        player_id=1
+                    )
+    players.append(P1)
+    P2 = Player(
+                        f'Player 2',
+                        'Marines',
+                        'aggressive',
+                        player_id=2
+                    )
+    players.append(P2)
+
     curses.wrapper(lambda stdscr: Mod_GameEngine(
                 game_mode=GameMode,
                 map_size=map_size,

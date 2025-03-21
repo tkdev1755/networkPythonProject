@@ -5,7 +5,6 @@ import curses
 import config
 from Players import Player
 import os
-from Starter_File import start_mod_game
 
 norj = input("Tape n pour créer une partie et j pour join :")
 
@@ -35,24 +34,9 @@ if norj =='n' :
         start_menu(save_file=args.save)
 
 else :
-    players = []
-    GameMode = "Utopia"
-    map_size = (120,120)
-    num_players = 2
-    player1 = Player(
-                        f'Player 1',
-                        None,
-                        None,
-                        player_id=1
-                    )
-    player2 = Player(
-                        f'Player 2',
-                        None,
-                        None,
-                        player_id=2
-                    )
-    players.append(player1)
-    players.append(player2)
+    project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+    sys.path.append(project_root)
+    from backend.Starter_File import start_mod_game
     start_mod_game()
     
 
