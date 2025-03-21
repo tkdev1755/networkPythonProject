@@ -4,10 +4,13 @@ from Building import TownCenter
 from logger import debug_print
 from Starter_File import global_speedS
 
+global IDMAKER
+IDMAKER = 1
+
 # Unit Class
 class Unit:
     global_speed = global_speedS
-    def __init__(self, player, hp, cost, attack, speed, symbol="u", training_time=0, position=(0.0, 0.0), id=random.randint(0,1000000000)):
+    def __init__(self, player, hp, cost, attack, speed, symbol="u", training_time=0, position=(0.0, 0.0), id=None):
         self.player = player
         self.hp = hp
         self.cost = cost
@@ -25,7 +28,9 @@ class Unit:
         self.current_frame = 0  # Initialiser à 0 si absent
         self.frame_counter = 0 
         self.is_moving = False
-        self.id = id
+        global IDMAKER
+        self.id = IDMAKER
+        IDMAKER += 1
 
     def __str__(self):
         return self.symbol  # Ensure the building is represented by just the symbol
@@ -214,6 +219,9 @@ class Villager(Unit):
         self.sprite_height = 50
         self.z = 0
         self.max_hp = 25
+
+    def __repr__(self):
+        return str(self.sprite)+' '+str(self.player)+' '+str(self.id)
         
 
     @property
