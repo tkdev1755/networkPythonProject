@@ -77,6 +77,15 @@ class Mod_GameEngine:
         if not self.is_paused:
             return time.time()
         return self.current_time
+    
+    def interpret_message(self,message):
+        action, id, data=message.split(";")
+        if action=="SetPosition":
+            self.move_by_id(int(id), ptuple_to_tuple(data))
+        elif action=="SetUnit":
+            pos = ptuple_to_tuple(data)
+            newguy = Unit.spawn_unit(Villager,int(pos[0]),int(pos[1]),self.players[int(data[2])-1],self.map)
+            newguy.id = int(id)
 
     def run(self, stdscr):
         # Initialize the starting view position
@@ -86,6 +95,7 @@ class Mod_GameEngine:
         ######
         # SOCKET ??????????
         ######
+        sock = create_socket()
 
         # Display the initial viewport
         stdscr.clear()  # Clear the screen
@@ -207,13 +217,13 @@ class Mod_GameEngine:
                     
                 if not self.is_paused and self.turn % 10 == 0:
                     # Move units toward their target position
-                    """try:
+                    try:
                         data, addr = sock.recvfrom(1024)
                         print("received message: %s" % data)
-                        interpret_message(data.decode('utf-8'))
+                        self.interpret_message(data.decode('utf-8'))
 
                     except BlockingIOError:
-                        pass"""
+                        pass
 
                 # Clear the screen and display the new part of the map after moving
                 stdscr.clear()

@@ -4,7 +4,8 @@
 
 #il faut qu'on s'accorde sur le contenu de Data
 
-
+def decoupe(string):
+    return string.split(";")
 
 def ptuple_to_tuple(ptuple): #passe une string "(a,..,z)" en tuple (a,..,z)
     return tuple(map(float,ptuple[1:-1].split(",")))
@@ -22,14 +23,11 @@ def receive_message(): #peut être qu'il faudra mettre un argument pour l'ip ?
     pass
 
 import socket
-
-UDP_IP_MAX = ""
-UDP_IP_ETAN = ""
 UDP_PORT = 5005
 
 def create_socket():
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    sock.bind((UDP_IP_MAX,UDP_PORT))
+    sock.bind(("127.0.0.1",5006))
     sock.setblocking(0) #socket non bloquante
     return sock
 
