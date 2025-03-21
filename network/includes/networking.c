@@ -39,6 +39,8 @@ int udpclient(struct sockaddr_in *server_sa, int port, char * ip){
 
 int udpserver(struct sockaddr_in *server_sa, int port, char * ip){
     int socketfd = socket(AF_INET, SOCK_DGRAM, 0);
+    int sockoptStatus = 1;
+    setsockopt(socketfd, SOL_SOCKET, SO_REUSEADDR,&sockoptStatus,sizeof(setsockopt));
     if(socketfd < 0){
         stop("Socket creation failed !");
     }

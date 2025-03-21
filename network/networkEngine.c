@@ -5,7 +5,7 @@ int main() {
     int bytes_recu = 0, selectfd;
     char *ip = getip(INTERFACE); //ip of my eth0 interface
     char received_msg[BUFFER_SIZE + 1];
-    struct sockaddr_in server_sa, client_sa, localhost_sa;
+    struct sockaddr_in server_sa, client_sa, localhost_sa, python_sa;
     socklen_t len = sizeof(client_sa);
     struct timeval timeout;
     timeout.tv_sec = 10;
@@ -14,7 +14,10 @@ int main() {
     bzero(&client_sa, sizeof(struct sockaddr_in));
     bzero(&localhost_sa, sizeof(struct sockaddr_in));
     bzero(received_msg, BUFFER_SIZE + 1);
-
+    bzero(&python_sa, sizeof(struct sockaddr_in));
+    python_sa.sin_addr.s_addr = inet_addr(LOCALHOSTIP);
+    python_sa.sin_port = htons(5006);
+    python_sa.sin_family = AF_INET;
     int udpserverfd = udpserver(&server_sa, SERVERPORT, ip);
     int tolocalhostfd = udpserver(&localhost_sa, LOCALHOSTPORT, LOCALHOSTIP);
 
@@ -64,7 +67,7 @@ int main() {
 
             printf("%s\n", received_msg);
             printf("Sending to %s ...\n");
-            if (sendingUpdate(localhost_sa, tolocalhostfd, received_msg, bytes_recu) == -1) {
+            if (sendingUpdate(client_sa, tolocalhostfd, received_msg, bytes_recu) == -1) {
                 close(udpserverfd);
                 close(tolocalhostfd);
                 stop("Sending to python program failed : ");
@@ -83,7 +86,7 @@ int main() {
                 stop("Reception error on tolocalhostfd: ");
             }
 
-            printf("Sending %s to the other players in broadcast...\n");
+            printf("Sending %s to the other players in broadcast...\n", received_msg);
 
             if (broadcast_sending(udpserverfd, received_msg, bytes_recu) != 0) {
                 close(udpserverfd);
