@@ -13,11 +13,13 @@ int main() {
 
     bzero(&client_sa, sizeof(struct sockaddr_in));
     bzero(&localhost_sa, sizeof(struct sockaddr_in));
-    bzero(received_msg, BUFFER_SIZE + 1);
     bzero(&python_sa, sizeof(struct sockaddr_in));
+    bzero(received_msg, BUFFER_SIZE + 1);
+
+    python_sa.sin_family = AF_INET;
     python_sa.sin_addr.s_addr = inet_addr(LOCALHOSTIP);
     python_sa.sin_port = htons(5006);
-    python_sa.sin_family = AF_INET;
+
     int udpserverfd = udpserver(&server_sa, SERVERPORT, ip);
     int tolocalhostfd = udpserver(&localhost_sa, LOCALHOSTPORT, LOCALHOSTIP);
 
@@ -66,8 +68,9 @@ int main() {
             }
 
             printf("%s\n", received_msg);
-            printf("Sending to %s ...\n");
-            if (sendingUpdate(client_sa, tolocalhostfd, received_msg, bytes_recu) == -1) {
+
+            printf("Sending to localhost ...\n");
+            if (sendingUpdate(python_sa, tolocalhostfd, received_msg, bytes_recu) == -1) {
                 close(udpserverfd);
                 close(tolocalhostfd);
                 stop("Sending to python program failed : ");
