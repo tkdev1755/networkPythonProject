@@ -222,12 +222,12 @@ class GameEngine:
                 #check for any messages received
                 #message = create_message("SetUnit",3,(32,32,2))
                 #self.interpret_message(message)
-                try:
+                '''try:
                     data, addr = sock.recvfrom(1024)
                     print("received message: %s" % data)
                     self.interpret_message(data.decode('utf-8'))
                 except BlockingIOError:
-                    pass  
+                    pass  '''
 
                 #call the IA
                 if not self.is_paused and self.turn % 200 == 0 and self.IA_used == True: # Call the IA every 5 turns: change 0, 5, 10, 15, ... depending on lag
