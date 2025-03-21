@@ -7,7 +7,7 @@ from Starter_File import global_speedS
 # Unit Class
 class Unit:
     global_speed = global_speedS
-    def __init__(self, player, hp, cost, attack, speed, symbol="u", training_time=0, position=(0.0, 0.0)):
+    def __init__(self, player, hp, cost, attack, speed, symbol="u", training_time=0, position=(0.0, 0.0), id=random.randint(0,1000000000)):
         self.player = player
         self.hp = hp
         self.cost = cost
@@ -25,11 +25,7 @@ class Unit:
         self.current_frame = 0  # Initialiser à 0 si absent
         self.frame_counter = 0 
         self.is_moving = False
-        self.id = None
-        self.id_maker()
-
-    def id_maker(self):
-        self.id = random.randint(0, 1000000000)
+        self.id = id
 
     def __str__(self):
         return self.symbol  # Ensure the building is represented by just the symbol

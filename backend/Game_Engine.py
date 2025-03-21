@@ -90,7 +90,8 @@ class GameEngine:
             self.move_by_id(int(id), ptuple_to_tuple(data))
         elif action=="SetUnit":
             pos = ptuple_to_tuple(data)
-            Unit.spawn_unit(Villager,int(pos[0]),int(pos[1]),self.players[int(data[2])-1],self.map)
+            newguy = Unit.spawn_unit(Villager,int(pos[0]),int(pos[1]),self.players[int(data[2])-1],self.map)
+            newguy.id = int(id)
 
     def move_by_id(self,id,position): #juste, remplace la position de l'unité d'id id par position 
         for player in self.players: #cherche l'unité d'id id et s'arrête une fois trouvée
@@ -98,7 +99,7 @@ class GameEngine:
                 if unit.id==id:
                     unit.position=position
                     return
-            #unité non trouvée, càd nouvelle unité
+            #unité non trouvée, càd nouvelle unité, assumée joueur 1 pour le moment, mais devrait être assumée joueur adverse
             Unit.spawn_unit(Villager,float(position[0]),float(position[1]),self.players[0],self.map)
 
     def run(self, stdscr):
@@ -240,7 +241,7 @@ class GameEngine:
                                 target_x, target_y = unit.target_position
                                 action.move_unit(unit, target_x, target_y, self.get_current_time())
                                 #envoyer "Set;ID;Data" pour indiquer le nouvel emplacement
-                                #send_message(create_message("Set", unit.id, unit.position))
+                                send_message(create_message("Set", unit.id, unit.position),"127.0.0.1")
 
 
                             elif unit.task == "gathering" or unit.task == "returning":
