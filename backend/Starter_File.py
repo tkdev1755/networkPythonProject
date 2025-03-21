@@ -791,8 +791,12 @@ def start_menu(save_file=None):
             return start_menu(save_file)
         elif settings:
             # Import GameEngine at the start
+            print("Répertoire actuel :", os.getcwd())
+            print("import sans soucis ")
+            time.sleep(2)
             from Game_Engine import GameEngine
-
+            print("import sans soucis2 ")
+            time.sleep(2)
             
             # Update global settings
             global GameMode, map_size, players
@@ -855,7 +859,8 @@ def start_menu(save_file=None):
 
 def start_game(stdscr, save_file=None):
     
-
+    print("import sans soucis ")
+    time.sleep(2)
     from Game_Engine import GameEngine
     curses.curs_set(0)
     stdscr.clear()
