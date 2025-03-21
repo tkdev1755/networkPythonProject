@@ -74,33 +74,34 @@ class Map:
 
 
         # Wood Generation
-        num_wood = (num_resources - num_gold) // 10  # Remaining resource tiles as wood --> increase the '15' for less forests
-        for _ in range(num_wood):
-            # Generate a random forest
-            forest_size = random.randint(20, 50)
-            start_x = random.randint(0, self.width - 1)
-            start_y = random.randint(0, self.height - 1)
+        if GameMode != "Empty":
+            num_wood = (num_resources - num_gold) // 10  # Remaining resource tiles as wood --> increase the '15' for less forests
+            for _ in range(num_wood):
+                # Generate a random forest
+                forest_size = random.randint(20, 50)
+                start_x = random.randint(0, self.width - 1)
+                start_y = random.randint(0, self.height - 1)
 
-            # Create an irregular forest by deciding tile placement randomly
-            x, y = start_x, start_y
-            tile = self.grid[y][x]
-            directions = [(0, 1), (0, -1), (1, 0), (-1, 0)]
-
-            for _ in range(forest_size):
-                # Choose a random direction
-                dx, dy = random.choice(directions)
-                x += dx
-                y += dy
-
-                # Ensure the forest fits within the grid boundaries
-                x = max(0, min(x, self.width - 1))
-                y = max(0, min(y, self.height - 1))
+                # Create an irregular forest by deciding tile placement randomly
+                x, y = start_x, start_y
                 tile = self.grid[y][x]
+                directions = [(0, 1), (0, -1), (1, 0), (-1, 0)]
 
-                if tile.resource is None:  # Avoid overwriting existing resources
-                    resource = Wood()
-                    tile.resource = resource
-                    self.resources["Wood"].append((x, y))  # Store Wood resource position
+                for _ in range(forest_size):
+                    # Choose a random direction
+                    dx, dy = random.choice(directions)
+                    x += dx
+                    y += dy
+
+                    # Ensure the forest fits within the grid boundaries
+                    x = max(0, min(x, self.width - 1))
+                    y = max(0, min(y, self.height - 1))
+                    tile = self.grid[y][x]
+
+                    if tile.resource is None:  # Avoid overwriting existing resources
+                        resource = Wood()
+                        tile.resource = resource
+                        self.resources["Wood"].append((x, y))  # Store Wood resource position
 
 
     def is_tile_free(self, x, y):
