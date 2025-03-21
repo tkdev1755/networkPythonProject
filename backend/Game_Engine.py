@@ -92,14 +92,15 @@ class GameEngine:
     def move_by_id(self,id,data): #juste, remplace la position de l'unité d'id id par position 
         pos = (data[0],data[1])
         for player in self.players:
+            print(player.units)
             if player.id == data[2] :
                 for unit in player.units :
                     if unit.id == id :
                         unit.position = pos
                         return
-                    
         newguy =Unit.spawn_unit(Villager,int(pos[0]),int(pos[1]),self.players[int(data[2])-1],self.map)
         newguy.id = int(id)
+        print(newguy.id)
 
     def run(self, stdscr):
         # Initialize the starting view position
@@ -219,9 +220,14 @@ class GameEngine:
                         self.debug_print("No save files found.")
 
                 #check for any messages received
-                message = create_message("SetUnit",3,(32,32,2))
-                self.interpret_message(message)
-                
+                #message = create_message("SetUnit",3,(32,32,2))
+                #self.interpret_message(message)
+                try:
+                    data, addr = sock.recvfrom(1024)
+                    print("received message: %s" % data)
+                    self.interpret_message(data.decode('utf-8'))
+                except BlockingIOError:
+                    pass  
 
                 #call the IA
                 if not self.is_paused and self.turn % 200 == 0 and self.IA_used == True: # Call the IA every 5 turns: change 0, 5, 10, 15, ... depending on lag
