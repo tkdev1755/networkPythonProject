@@ -14,8 +14,11 @@ def create_message(action, id, data):
     return str(action)+";"+str(id)+";"+str(data)
 
 #fonction pour envoyer un message par réseau
-def send_message(message,ip):
-    pass
+def send_message(message,sock):
+    try:
+        sock.sendto(bytes(message,'utf-8'),("127.0.0.1", 5005))
+    except BlockingIOError:
+        pass
 
 #fonction pour recevoir un message par réseau ?
 def receive_message(): #peut être qu'il faudra mettre un argument pour l'ip ?
@@ -23,9 +26,7 @@ def receive_message(): #peut être qu'il faudra mettre un argument pour l'ip ?
 
 import socket
 
-UDP_IP_MAX = ""
-UDP_IP_ETAN = ""
-UDP_PORT = 5005
+
 
 def create_socket():
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
