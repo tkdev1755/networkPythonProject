@@ -29,7 +29,7 @@ import socket
 
 def create_socket():
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    sock.bind(("192.168.167.250",5005))
+    sock.bind(("127.0.0.1",5006))
     sock.setblocking(0) #socket non bloquante
     return sock
 
