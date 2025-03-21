@@ -107,6 +107,10 @@ class Mod_GameEngine:
         if action=="SetUnit":
             print("starting move by id")
             self.move_by_id(int(id),ptuple_to_tuple(data))
+        elif action =="SetBuilding":
+            print("setting building")
+            pass
+
            
 
     def move_by_id(self,id,data): #juste, remplace la position de l'unité d'id id par position 
