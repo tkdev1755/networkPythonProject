@@ -17,7 +17,8 @@ def create_message(action, id, data):
 #fonction pour envoyer un message par réseau
 def send_message(message,sock):
     try:
-        sock.sendto(bytes(message,'utf-8'),("127.0.0.1", 5005))
+        #sock.sendto(bytes(message,'utf-8'),("127.0.0.1", 5005))
+        sock.sendto(bytes(message,'utf-8'),("192.168.167.250", 5005))
     except BlockingIOError:
         pass
 
@@ -29,7 +30,7 @@ import socket
 
 def create_socket():
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    sock.bind(("127.0.0.1",5006))
+    sock.bind(("192.168.167.254",5005))
     sock.setblocking(0) #socket non bloquante
     return sock
 

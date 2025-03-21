@@ -86,21 +86,20 @@ class GameEngine:
     #fonction pour interpréter un message 
     def interpret_message(self,message):
         action, id, data=message.split(";")
-        if action=="SetPosition":
-            self.move_by_id(int(id), ptuple_to_tuple(data))
-        elif action=="SetUnit":
-            pos = ptuple_to_tuple(data)
-            newguy = Unit.spawn_unit(Villager,int(pos[0]),int(pos[1]),self.players[int(data[2])-1],self.map)
-            newguy.id = int(id)
+        if action=="SetUnit":
+            self.move_by_id(int(id),ptuple_to_tuple(data))
 
-    def move_by_id(self,id,position): #juste, remplace la position de l'unité d'id id par position 
-        for player in self.players: #cherche l'unité d'id id et s'arrête une fois trouvée
-            for unit in player.units:
-                if unit.id==id:
-                    unit.position=position
-                    return
-            #unité non trouvée, càd nouvelle unité, assumée joueur 1 pour le moment, mais devrait être assumée joueur adverse
-            Unit.spawn_unit(Villager,float(position[0]),float(position[1]),self.players[0],self.map)
+    def move_by_id(self,id,data): #juste, remplace la position de l'unité d'id id par position 
+        pos = (data[0],data[1])
+        for player in self.players:
+            if player.id == data[2] :
+                for unit in player.units :
+                    if unit.id == id :
+                        unit.position = pos
+                        return
+                    
+        newguy =Unit.spawn_unit(Villager,int(pos[0]),int(pos[1]),self.players[int(data[2])-1],self.map)
+        newguy.id = int(id)
 
     def run(self, stdscr):
         # Initialize the starting view position
@@ -220,10 +219,8 @@ class GameEngine:
                         self.debug_print("No save files found.")
 
                 #check for any messages received
-                #message = create_message("SetPosition", self.players[0].units[0].id, (30,30))
-                #self.interpret_message(message)
-                #message2 = create_message("SetUnit",3,(32,32,2))
-                #self.interpret_message(message2)
+                message = create_message("SetUnit",3,(32,32,2))
+                self.interpret_message(message)
                 
 
                 #call the IA
@@ -244,7 +241,9 @@ class GameEngine:
                                 target_x, target_y = unit.target_position
                                 action.move_unit(unit, target_x, target_y, self.get_current_time())
                                 #envoyer "Set;ID;Data" pour indiquer le nouvel emplacement
-                                send_message(create_message("SetPosition", unit.id, unit.position),sock)
+                                message=create_message("SetUnit", unit.id, (unit.position[0],unit.position[1],unit.player.id))
+                                send_message(message,sock)
+                                print(message)
 
 
                             elif unit.task == "gathering" or unit.task == "returning":
