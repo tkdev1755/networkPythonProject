@@ -1,4 +1,7 @@
 #fonctions permettant l'interprétation de messages "Action;ID;Data"
+from pygame.display import update
+from network.test_1_c_version import message
+
 
 #"Set;ID;Data" demande la modification de l'état de l'objet d'id ID
 
@@ -58,3 +61,5 @@ def move_by_id(self,id,position): #juste, remplace la position de l'unité d'id 
             #unité non trouvée, càd nouvelle unité
             Unit.spawn_unit(None,Villager,position[0],position[1],self.players[0],self.map)
 '''
+
+print("test!")

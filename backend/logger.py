@@ -15,7 +15,7 @@ if config.debug_mode:
     )
 
 # Chemin du fichier de log dans le dossier TEMP
-log_file_path = os.path.join(os.getenv('TEMP'), 'gamelogs.txt')
+log_file_path = os.path.join(os.getenv("TEMP"), 'gamelogs.txt')
 
 # Variable pour s'assurer qu'on écrit l'en-tête une seule fois
 header_printed = False
