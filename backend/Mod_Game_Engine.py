@@ -101,20 +101,25 @@ class Mod_GameEngine:
             return time.time()
         return self.current_time
     
-    def interpret_message(self,message):
+
+    def interpret_message(self,message,sock):
         message = message.decode('utf-8')
         action, id, data=message.split(";")
         if action=="SetUnit":
-            print("starting move by id")
             self.move_by_id(int(id),ptuple_to_tuple(data))
-        elif action =="SetBuilding":
-            print("setting building")
-            pass
+        elif action=="SetBuilding":
+            self.set_building_by_id(int(id),ptuple_to_tuple(data))
+        elif action=="SetResource":
+            self.set_resource_by_position(int(id),ptuple_to_tuple(data))
+        elif action=="AskSize":
+            self.send_world_size(sock)
+        else:
+            print("Action inconnue pour le moment:",action)
 
            
 
     def move_by_id(self,id,data): #juste, remplace la position de l'unité d'id id par position 
-        pos = (data[0],data[1])
+        pos = (int(float(data[0])),int(float(data[1])))
         for player in self.players:
             #if player.id == data[2] :
                 for unit in player.units :
@@ -129,6 +134,51 @@ class Mod_GameEngine:
             print("Unit had spawned") 
         except AttributeError:
             print("Attribut error")
+    
+    def set_building_by_id(self,id,data): #action,id,(player.id,name,x,y)
+        pass
+        """for player in self.players:
+            if player.id == data[0] :
+                for building in player.buildings :
+                    if building.id == id :
+                        return #building aleady exists
+        if data[1] == "TownCenter":
+            this_class=Keep
+        elif data[1] == "House":
+            this_class=House
+        elif data[1] == "Camp":
+            this_class=Camp
+        elif data[1] == "Farm":
+            this_class=Farm
+        elif data[1] == "Barracks":
+            this_class=Barracks
+        elif data[1] == "Stable":
+            this_class=Stable
+        elif data[1] == "ArcheryRange":
+            this_class=ArcheryRange
+        else:
+            print("problèmes lecture classe batiment:",data[1])
+        building_instance = TownCenter(self.players[int(data[0])-1])
+        newbuild = Building.spawn_building(self.players[int(data[0])-1],int(data[2]),int(data[3]),this_class(),self.map)
+        newbuild.id = int(id)
+        print(newbuild.id)"""
+
+    def set_resource_by_position(self,id,data): #action,id,(x,y,ressource,amount) ,self.map.grid[y][x] pour avoir la tuile, 
+        x,y = int(data[0]),int(data[1])
+        amount = float(data[3])
+        if data[2] == "None":
+            self.map.grid[y][x].resource = None
+        elif data[2] == 'Wood':
+            self.map.grid[y][x].resource = Wood()
+            self.map.grid[y][x].resource.amount = amount
+        elif data[2] == 'Gold':
+            self.map.grid[y][x].resource = Gold()
+            self.map.grid[y][x].resource.amount = amount
+        elif data[2] == 'Food':
+            self.map.grid[y][x].resource = Food()
+            self.map.grid[y][x].resource.amount = amount
+        else:
+            print("set_resource problème lecture data, Resource:",data[2])
 
     def run(self, stdscr,networkengine):
         # Initialize the starting view position
@@ -267,7 +317,7 @@ class Mod_GameEngine:
                     try:
                         data, addr = networkengine.socket.recvfrom(1024)
                         print("received message: %s" % data)
-                        self.interpret_message(data)
+                        self.interpret_message(data,networkengine.socket)
 
                     except BlockingIOError:
                         pass
