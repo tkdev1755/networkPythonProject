@@ -320,7 +320,7 @@ class GameEngine:
                                     message=create_message("SetResource",this_tile.id,(x,y,"None",0))
                                 else:
                                     message=create_message("SetResource",this_tile.id,(x,y,this_tile.resource.type,this_tile.resource.amount))
-                                send_message(message,networkengine.sock)
+                                send_message(message,networkengine.socket)
                                 print(message)
                             elif unit.task == "is_attacked":
                                 action._attack(unit, unit.is_attacked_by, self.get_current_time())
