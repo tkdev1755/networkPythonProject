@@ -284,11 +284,14 @@ class GameEngine:
                             elif unit.task == "gathering" or unit.task == "returning":
                                 action._gather(unit, unit.last_gathered, self.get_current_time())
                             elif unit.task == "marching":
+                                x,y = unit.target_resource #target_resource est une position, ligne ajoutée par moi
                                 action.gather_resources(unit, unit.last_gathered, self.get_current_time())
                                 #envoyer "SetResource;ID;Data" pour indiquer l'état de la ressource, data=(x,y,ressource,amount)
-                                x,y = unit.target_resource #target_resource est une position
                                 this_tile = self.map.grid[y][x]
-                                message=create_message("SetResource",this_tile.id,(x,y,this_tile.resource.type,this_tile.resource.amount))
+                                if this_tile.resource == None:
+                                    message=create_message("SetResource",this_tile.id,(x,y,"None",0))
+                                else:
+                                    message=create_message("SetResource",this_tile.id,(x,y,this_tile.resource.type,this_tile.resource.amount))
                                 send_message(message,sock)
                                 print(message)
                             elif unit.task == "is_attacked":
