@@ -1,5 +1,4 @@
 #fonctions permettant l'interprétation de messages "Action;ID;Data"
-from turtledemo.sorting_animate import Block
 
 from pygame.display import update
 import uuid
