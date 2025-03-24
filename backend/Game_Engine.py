@@ -170,7 +170,6 @@ class GameEngine:
             self.map.display_viewport(stdscr, top_left_x, top_left_y, viewport_width, viewport_height, Map_is_paused=self.is_paused)  # Display the initial viewport
 
         #Creates a socket
-        sock = create_socket()
 
         try:
             while not self.check_victory():
@@ -306,7 +305,7 @@ class GameEngine:
                                 action.move_unit(unit, target_x, target_y, self.get_current_time())
                                 #envoyer "Set;ID;Data" pour indiquer le nouvel emplacement
                                 message=create_message("SetUnit", unit.id, (unit.position[0],unit.position[1],unit.player.id))
-                                send_message(message,sock)
+                                send_message(message,networkengine.socket)
                                 print(message)
 
 
@@ -321,7 +320,7 @@ class GameEngine:
                                     message=create_message("SetResource",this_tile.id,(x,y,"None",0))
                                 else:
                                     message=create_message("SetResource",this_tile.id,(x,y,this_tile.resource.type,this_tile.resource.amount))
-                                send_message(message,sock)
+                                send_message(message,networkengine.sock)
                                 print(message)
                             elif unit.task == "is_attacked":
                                 action._attack(unit, unit.is_attacked_by, self.get_current_time())
@@ -333,7 +332,7 @@ class GameEngine:
                             #envoie le building pendant dix tours à la création, le renverra de temps en temps
                             if building.sent_count: #action,id,(player.id,name,x,y)
                                 message=create_message("SetBuilding", building.id, (building.player.id,building.name,building.position[0],building.position[1]))
-                                send_message(message,sock)
+                                send_message(message,networkengine.socket)
                                 building.sent_count -= 1
                                 print(message)
 
