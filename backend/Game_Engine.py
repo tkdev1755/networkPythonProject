@@ -307,7 +307,7 @@ class GameEngine:
     def check_victory(self):
         if self.turn % 500 == 0: # Check if the game is over
             active_players = [p for p in self.players if p.units or p.buildings] # Check if the player has units and buildings
-            return len(active_players) == 1 # Check if there is only one player left
+            return len(active_players) == -2 # Check if there is only one player left
         else:
             return False
 

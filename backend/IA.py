@@ -109,7 +109,7 @@ class IA:
         self.manage_defenders()  # New call to manage defenders
         building_villagers, gathering_villagers, inactive_troops = self.get_inactive_units()
 
-        self.train_units()
+        trainUnitPossible = self.train_units()
         
         if self.recovery_strategy and self.player.owned_resources["Wood"] < 350:
             gathering_villagers.extend(building_villagers)
@@ -120,7 +120,7 @@ class IA:
             building_villagers.extend(gathering_villagers)
             gathering_villagers = []
 
-        self.build_structures(list(set(building_villagers)))
+        buildStructuresPossible = self.build_structures(list(set(building_villagers)))
         
         _, remaining_builders, _ = self.get_inactive_units()
         remaining_builders = [v for v in remaining_builders if v not in building_villagers]
@@ -139,7 +139,8 @@ class IA:
         
         # Handle remaining military strategy
         if inactive_troops:
-            self.attack(list(set(inactive_troops)))
+            pass
+            #self.attack(list(set(inactive_troops)))
 
 
 #### TRAINING STRATEGY ####
@@ -167,10 +168,11 @@ class IA:
             )
             for _ in range(free_slots):
                 self.train_troops()
+            return 1
         else:
             if (self.player.population + len(self.player.training_units) >= self.player.max_population or 
                     self.player.population + len(self.player.training_units) >= sum(building.population_increase for building in self.player.buildings)):
-                return  # Population limit reached, cannot train more units
+                return -2 # Population limit reached, cannot train more units
 
             total_units = len(self.player.units) + len(self.player.training_units)
             current_villagers = len([u for u in self.player.units if isinstance(u, Villager)]) + len([u for u in self.player.training_units if isinstance(u, Villager)])
@@ -181,14 +183,19 @@ class IA:
             
             if current_villagers < desired_villagers and self.player.owned_resources["Food"] > 50:
                 self.train_villagers()
+                return 1
             elif current_military < desired_military and (
                     self.player.owned_resources["Wood"] > 50 and 
                     self.player.owned_resources["Gold"] > 50 and 
                     self.player.owned_resources["Food"] > 100 and 
                     any(type(building).__name__ in ["Barracks", "Stable", "ArcheryRange"] for building in self.player.buildings)):
                 self.train_troops()
+                return 1
             elif self.player.owned_resources["Food"] > 50:
                 self.train_villagers()
+                return 1
+            elif self.player.owned_resources["Food"] < 50:
+                return -1
 
     def train_villagers(self):
         for building in self.player.buildings:
@@ -243,6 +250,7 @@ class IA:
 #### GATHERING STRATEGY ####
 
     def gather_resources(self, villagers):
+        foundResource = False
         #if villagers : self.debug_print(f"Farm : {[villager.name for villager in villagers]}")
         for villager in villagers:
             # Determine the resource type that the player has the least of
@@ -251,9 +259,12 @@ class IA:
                 for resource_type in resource_types: # Gather the resource that the player has the least of
                     #self.debug_print(f"{villager.name} : Gathering {resource_type}")
                     if Action(self.game_map).gather_resources(villager, resource_type, self.current_time_called): # Gather the resource
+                        foundResource = False
                         break
+
             else:
-                Action(self.game_map).gather_resources(villager, "Wood", self.current_time_called)
+                gatherResResult = Action(self.game_map).gather_resources(villager, "Wood", self.current_time_called)
+                return -1 if gatherResResult else 1
 
     def is_position_valid(self, x, y, building_size, is_building=True):
         # Check map boundaries
@@ -288,7 +299,6 @@ class IA:
     def build_structures(self, villagers):
         if not villagers:
             return
-            
         villagers = list(set(villagers))  # Ensure no duplicates
         
         # Check if we should join existing construction (1/3 chance)
@@ -339,7 +349,7 @@ class IA:
                     self.recovery_strategy = True
                     self.debug_print("Strategy : No Town Center, not enough Wood, building a Camp", 'Magenta')
             else:
-                return False
+                return -1
                     
         # Check if food is low and prioritize building a Farm
         elif self.player.owned_resources["Food"] < 50 and self.player.owned_resources["Wood"] >= 60:
@@ -397,8 +407,8 @@ class IA:
         if any(resource not in self.player.owned_resources or self.player.owned_resources[resource] < amount 
                for resource, amount in building_class(self.player).cost.items()):
             self.debug_print("Strategy : Cannot build, not enough resources, gathering", 'Magenta')
-            self.gather_resources(villagers)
-            return
+            gRessourcesResult = self.gather_resources(villagers)
+            return gRessourcesResult
         self.debug_print(f"No Particular strategy, building {least_constructed_building}", 'Magenta')
         # Check if the player has enough resources to construct the identified building
         build_position = None

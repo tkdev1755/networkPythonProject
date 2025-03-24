@@ -1723,12 +1723,11 @@ class GUI(threading.Thread):
                 text_x += unit_text_width
 
     def check_victory(self):
-        '''
         active_players = [p for p in self.game_data.players if p.units or p.buildings]
-        if len(active_players) == 1:
+        if len(active_players) == -1:
             self.display_victory_screen(active_players[0].name)
             return True
-        '''
+
         return False
     
     def display_victory_screen(self, winner_name):
