@@ -26,6 +26,13 @@ global_speedS = 10
 current_dir = os.path.dirname(__file__)
 
 # File modified by adam (@Moutanazhir) to make the game playable with one player
+'''
+    Log modifications 
+        24/02/25@tkdev1755 : Modifié les appels à createsocket et setblocking pour des appels de fonctions de la classe NetworkEngine
+
+
+'''
+
 
 class StartMenu:
     def __init__(self, screen_width=800, screen_height=600):
@@ -796,9 +803,8 @@ class PlayerSettingsMenu:
 def start_menu(save_file=None):
     menu = StartMenu()
     action = menu.run()
-    sock = create_socket()
-    networkengine = NetworkEngine(sock)
-
+    networkengine = NetworkEngine()
+    networkengine.create_socket() # Remplace la ligne sock=createSocket() -> Diminue les accès direct à des attributs de la classe
     if action == 'Start Game':
         settings_menu = GameSettingsMenu()
         settings = settings_menu.run()
@@ -836,14 +842,14 @@ def start_menu(save_file=None):
 
                 # Close pygame before starting curses
                 pygame.quit()
-
                 # Start the game with updated players list
                 curses.wrapper(lambda stdscr: GameEngine(
                     game_mode=GameMode,
                     map_size=map_size,
                     players=players,
-                    sauvegarde=False
-                ).run(stdscr,networkengine))
+                    sauvegarde=False,
+                    networkEngine=networkengine
+                ).run(stdscr))
             else:
                 # If player settings menu was closed, return to main menu
                 return start_menu(save_file)
@@ -869,12 +875,51 @@ def start_menu(save_file=None):
         sys.exit()
 
 
+def join_game():
+    from Game_Engine import GameEngine
+
+    global players,map_size,GameMode
+    players.clear()
+
+    networkEngine = NetworkEngine()
+    networkEngine.create_socket()
+    # networkengine.ask_size()
+    # now = time.time
+    # size = networkengine.wait_size(now)
+    # sock.setblocking(0) - remplacé par la ligne ci dessous, pour diminuer les modifications des attribts de la classe directement pour éviter les bugs
+    networkEngine.setSocketBlocking(False)
+    P1 = Player(
+        f'Player 1',
+        'Marines',
+        'aggressive',
+        player_id=1
+    )
+    players.append(P1)
+    P2 = Player(
+        f'Player 2',
+        'Marines',
+        'aggressive',
+        player_id=2
+    )
+    players.append(P2)
+
+    curses.wrapper(lambda stdscr: GameEngine(
+        game_mode="Empty",
+        map_size=map_size,
+        players=players,
+        sauvegarde=False,
+        networkEngine=networkEngine,
+        joinNetworkGame=True,
+        networkGame=True
+    ).run(stdscr))
+
+
 def start_game(stdscr, save_file=None):
     print("import sans soucis ")
     from Game_Engine import GameEngine
     curses.curs_set(0)
-    sock = create_socket()
-    networkengine = NetworkEngine(sock)
+    networkengine = NetworkEngine()
+    networkengine.create_socket()
     stdscr.clear()
 
     if save_file:
@@ -890,22 +935,25 @@ def start_game(stdscr, save_file=None):
             game_mode=GameMode,
             map_size=map_size,
             players=players,
-            sauvegarde=False
+            sauvegarde=False,
+            networkEngine=networkengine
         )
 
-    game_engine.run(stdscr,networkengine)
+    game_engine.run(stdscr)
+
 
 
 def start_mod_game ():
     from Mod_Game_Engine import Mod_GameEngine
     players.clear()
-    sock = create_socket()
-    sock.setblocking(1)
-    networkengine = NetworkEngine(sock)
+
+    networkEngine = NetworkEngine()
+    networkEngine.create_socket()
     #networkengine.ask_size()
-    now = time.time
+    #now = time.time
     #size = networkengine.wait_size(now)
-    sock.setblocking(0)
+    # sock.setblocking(0) - remplacé par la ligne ci dessous, pour diminuer les modifications des attribts de la classe directement pour éviter les bugs
+    networkEngine.setSocketBlocking(False)
     
     P1 = Player(
                 f'Player 1',
@@ -926,5 +974,6 @@ def start_mod_game ():
                 game_mode="Empty",
                 map_size=map_size,
                 players=players,
-                sauvegarde=False
-            ).run(stdscr,networkengine))
+                sauvegarde=False,
+                networkEngine=networkEngine
+            ).run(stdscr))

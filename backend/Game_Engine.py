@@ -25,9 +25,17 @@ from IA import IA
 
 from zReseau import *
 
+'''
+    Log modifications
+    24/05/25@tkdev1755 : Changé les appels des fonctions send_message et recvFrom vers des appels de méthodes de la classe NetworkEngine
+    24/05/25@tkdev1755 : Changé la manière dont le networkEngine est initialisé
+    24/05/25@tkdev1755 : Ajouté un attribut networkGame et joinNetworkGame pour gérer une partie en réseau et activer les fonctionnalités liées à celle-ci
+
+'''
+
 # GameEngine Class
 class GameEngine:
-    def __init__(self, game_mode, map_size, players, sauvegarde=False):
+    def __init__(self, game_mode, map_size, players, sauvegarde=False,networkEngine=None,networkGame=False, joinNetworkGame=False):
         self.game_mode = game_mode
         self.map_size = map_size
         self.players = players
@@ -35,15 +43,24 @@ class GameEngine:
         self.turn = 0
         self.is_paused = False  # Flag to track if the game is paused
         self.changed_tiles = set()  # Set to track changed tiles
-        
+        self.networkEngine = networkEngine
+        self.networkGame = networkGame
+        self.joinNetworkGame = joinNetworkGame
+
         # IA related attributes
-        self.ias = [IA(player, player.ai_profile, self.map, time.time()) for player in self.players]  # Instantiate IA for each player
-        for i in range(len(self.players)):
-            self.players[i].ai = self.ias[i]
-        self.IA_used = False
+        # If the player doesn't join another client game on the network, or doesn't play online, initialize the AIs normally
+        if not joinNetworkGame:
+            self.ias = [IA(player, player.ai_profile, self.map, time.time()) for player in self.players]  # Instantiate IA for each player
+            for i in range(len(self.players)):
+                self.players[i].ai = self.ias[i]
+            self.IA_used = False
+        else:
+            pass
+
+
 
         # Sauvegarde related attributes
-        if not sauvegarde:
+        if not sauvegarde and not joinNetworkGame:
             Building.place_starting_buildings(self.map)   # Place starting town centers on the map
             Unit.place_starting_units(self.players, self.map)  # Place starting units on the map
         
@@ -93,7 +110,7 @@ class GameEngine:
         elif action=="SetResource":
             self.set_resource_by_position(int(id),ptuple_to_tuple(data))
         elif action=="AskSize":
-            self.send_world_size(sock)
+            self.send_world_size()
         else:
             print("Action inconnue pour le moment:",action)
 
@@ -106,9 +123,12 @@ class GameEngine:
                     if unit.id == id :
                         unit.position = pos
                         return
-        newguy =Unit.spawn_unit(Villager,int(float(pos[0])),int(float(pos[1])),self.players[int(data[2])-1],self.map)
+        #newguy =Unit.spawn_unit(Villager,int(float(pos[0])),int(float(pos[1])),self.players[int(data[2])-1],self.map)
+        #newguy.id = int(id)
+        #print(newguy.id)
+        newguy = self.custom_spawn(pos, int(data[2]))
         newguy.id = int(id)
-        print(newguy.id)
+        print("Unit had spawned")
 
     def set_building_by_id(self,id,data): #action,id,(player.id,name,x,y)
         """for player in self.players:
@@ -154,16 +174,29 @@ class GameEngine:
         else:
             print("set_resource problème lecture data:",data[2])
 
-    def send_world_size(self,sock):
+    def send_world_size(self):
         message = create_message("SendSize",0,(self.map.width,self.map.height))
-        send_message(message,sock)
+        self.networkEngine.send_message(message)
 
-    def run(self, stdscr, networkengine):
+    def custom_spawn (self,pos,joueur_id):
+        print(self.players)
+        for player in self.players :
+            print(player.id, joueur_id)
+            if player.id == joueur_id:
+                unit = Villager(player,(pos[0],pos[1]))
+                player.units.append(unit)
+                unit.position = (pos[0],pos[1])
+                player.population += 1
+                self.map.place_unit(int(pos[0]),int(pos[1]), unit)
+                print("I return unit")
+                return unit
+
+    def run(self, stdscr):
         # Initialize the starting view position
         top_left_x, top_left_y = 0, 0
         viewport_width, viewport_height = 30, 30
         # Display the initial viewport
-        networkengine.gameEngine = self
+        self.networkEngine.gameEngine = self
         stdscr.clear()  # Clear the screen
         
         if self.terminalon :
@@ -259,8 +292,9 @@ class GameEngine:
                         self.debug_print("Game resumed.")
 
                 elif key == ord('n'):
-                    self.IA_used = not self.IA_used
-                    self.debug_print(f"IA used: {self.IA_used}")
+                    if not self.joinNetworkGame:
+                        self.IA_used = not self.IA_used
+                        self.debug_print(f"IA used: {self.IA_used}")
 
                 elif key == curses.KEY_F10: 
                     self.save_game()
@@ -280,18 +314,22 @@ class GameEngine:
                 #self.interpret_message(message)
             
                 try:
-                    data, addr = networkengine.socket.recvfrom(1024)
+                    data, addr = self.networkEngine.socket.recvfrom(1024)
                     print("received message: %s" % data)
-                    self.interpret_message(data.decode('utf-8'),networkengine.socket)
+                    self.interpret_message(data.decode('utf-8'),self.networkEngine.socket)
                 except BlockingIOError:
                     pass
+                except Exception as e:
+                    print("Exception lors de la réception d'une data ! : ",e)
+                    raise Exception("Problems")
 
-                #call the IA
-                if not self.is_paused and self.turn % 200 == 0 and self.IA_used == True: # Call the IA every 5 turns: change 0, 5, 10, 15, ... depending on lag
-                    for ia in self.ias:
-                        ia.current_time_called = self.get_current_time()  # Update the current time for each IA
-                        ia.run()  # Run the AI logic for each player
-                    
+                #call the AI if the player didn't join another client game on the network
+                if not self.joinNetworkGame:
+                    if not self.is_paused and self.turn % 200 == 0 and self.IA_used == True: # Call the IA every 5 turns: change 0, 5, 10, 15, ... depending on lag
+                        for ia in self.ias:
+                            ia.current_time_called = self.get_current_time()  # Update the current time for each IA
+                            ia.run()  # Run the AI logic for each player
+
                 if not self.is_paused and self.turn % 10 == 0:
                     # Move units toward their target position
                     for player in self.players:
@@ -305,7 +343,7 @@ class GameEngine:
                                 action.move_unit(unit, target_x, target_y, self.get_current_time())
                                 #envoyer "Set;ID;Data" pour indiquer le nouvel emplacement
                                 message=create_message("SetUnit", unit.id, (unit.position[0],unit.position[1],unit.player.id))
-                                send_message(message,networkengine.socket)
+                                self.networkEngine.send_message(message)
                                 print(message)
 
 
@@ -320,7 +358,7 @@ class GameEngine:
                                     message=create_message("SetResource",this_tile.id,(x,y,"None",0))
                                 else:
                                     message=create_message("SetResource",this_tile.id,(x,y,this_tile.resource.type,this_tile.resource.amount))
-                                send_message(message,networkengine.socket)
+                                self.networkEngine.send_message(message) # Remplace le send_message(message, self.networkEngine.socket)
                                 print(message)
                             elif unit.task == "is_attacked":
                                 action._attack(unit, unit.is_attacked_by, self.get_current_time())
@@ -332,7 +370,7 @@ class GameEngine:
                             #envoie le building pendant dix tours à la création, le renverra de temps en temps
                             if building.sent_count: #action,id,(player.id,name,x,y)
                                 message=create_message("SetBuilding", building.id, (building.player.id,building.name,building.position[0],building.position[1]))
-                                send_message(message,networkengine.socket)
+                                self.networkEngine.send_message(message)
                                 building.sent_count -= 1
                                 print(message)
 
@@ -364,6 +402,8 @@ class GameEngine:
             input("Press Enter to exit...")
 
         except KeyboardInterrupt:
+            self.networkEngine.socket.close()
+            self.debug_print("Properly closing the socket",'Yellow')
             self.debug_print("Game interrupted. Exiting...", 'Yellow')
         finally:
             if self.gui_running:
@@ -377,7 +417,7 @@ class GameEngine:
             return False
 
     #condition de victoire: être le dernier joueur avec des bâtiments
-    def victory():
+    def victory(self):
     
         def big_text(text):
             root = tk.Tk()

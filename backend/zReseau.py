@@ -1,8 +1,11 @@
 #fonctions permettant l'interprétation de messages "Action;ID;Data"
+from turtledemo.sorting_animate import Block
+
 from pygame.display import update
 import uuid
 import time
 import sys
+import socket
 
 #"Set;ID;Data" demande la modification de l'état de l'objet d'id ID
 
@@ -18,31 +21,13 @@ def ptuple_to_tuple(ptuple): #passe une string "(a,..,z)" en tuple (a,..,z)
 def create_message(action, id, data):
     return str(action)+";"+str(id)+";"+str(data)
 
-#fonction pour envoyer un message par réseau
-def send_message(message,sock):
-    try:
-        sock.sendto(bytes(message,'utf-8'),("127.0.0.1", 5005))
-    except BlockingIOError:
-        pass
 
-#fonction pour recevoir un message par réseau ?
-def receive_message(): #peut être qu'il faudra mettre un argument pour l'ip ?
-    pass
 
-import socket
 
-def create_socket():
-    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    sock.bind(("127.0.0.1",5006))
-    sock.setblocking(0) #socket non bloquante
-    return sock
 
-if __name__ == "__main__":
-    print(tuple("(30.5,30.5)".split(",")))
-    print(ptuple_to_tuple("(30.5,30.5)"))
-    #create_message("SetUnit",id,(x,y,player,map))
-    #create_message("SetUnit",3,(32,32,2))
-    #Unit.spawn_unit(Villager,float(position[0]),float(position[1]),self.players[0],self.map)
+
+
+
 
 '''
 #fonction pour interpréter un message 
@@ -65,11 +50,35 @@ def move_by_id(self,id,position): #juste, remplace la position de l'unité d'id 
 
 class NetworkEngine:
 
-    def __init__(self,sendSocket, gameEngine=None, size  = None):
-        self.socket = sendSocket
+    def __init__(self, gameEngine=None, size  = None):
+        self.socket = None
         self.gameEngine = gameEngine
         self.name = f"PL-{uuid.uuid1().hex[:10]}"
         self.size = size
+
+    def create_socket(self):
+        self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        self.socket.bind(("127.0.0.1", 5006))
+        self.socket.setblocking(False)  # socket non bloquante
+
+    def setSocketBlocking(self, blocking):
+        self.socket.setblocking(blocking)
+
+    def closeSocket(self):
+        self.socket.close()
+
+    def recvMessage(self):
+        try:
+            data,addr = self.socket.recvfrom(1024)
+            return data
+        except BlockingIOError as e:
+            raise BlockingIOError
+
+    def send_message(self,message):
+        try:
+            self.socket.sendto(bytes(message, 'utf-8'), ("127.0.0.1", 5005))
+        except BlockingIOError:
+            pass
 
     def isOwner(self,id):
         status = False # TEMP - à venir ici condition vraie si on est bien propriétaire ou fausse si on ne l'est pas
@@ -77,7 +86,7 @@ class NetworkEngine:
 
     def askForProperty(self, id):
         pMessage = f"get;{id};{self.name}"
-        send_message(pMessage, self.socket)
+        self.send_message(pMessage)
 
     # À Voir si on doit céder la propriété immédiatement dès qu'elle est demandée
     # où envoyer un message "yield;id;{data}"
@@ -85,7 +94,7 @@ class NetworkEngine:
         if self.isOwner(id):
             data = ""
             propertyMessage = f"yield;{self.name};{data}" # Peut changer de syntaxe
-            send_message(propertyMessage, self.socket)
+            self.send_message(propertyMessage)
             self.updateProperty(id)
 
     def updateProperty(self, id):
@@ -93,7 +102,7 @@ class NetworkEngine:
         pass
 
     # Fonction permettant vérifier si le joueur est propriétaire de l'entité
-    # A lancer avant d'effectuer une modification
+    # à lancer avant d'effectuer une modification
     def checkForProperty(self, id):
         if not self.isOwner(id):
             self.askForProperty(id)
@@ -102,13 +111,13 @@ class NetworkEngine:
 
     
     def ask_size (self):
-        send_message(f"AskSize;;",self.socket)
+        self.send_message(f"AskSize;;")
 
     def send_size (self,size):
-        send_message(f"SendSize;0;{size}",self.socket)
+        self.send_message(f"SendSize;0;{size}")
     
     def wait_size (self,t):
-        now = time.time 
+        now = time.time()
         while now - t < 10 :
             try:
                 data, addr = self.socket.recvfrom(1024)
@@ -122,5 +131,11 @@ class NetworkEngine:
             except BlockingIOError:
                 pass
         
-        sys.quit()
+        sys.exit()
 
+if __name__ == "__main__":
+    print(tuple("(30.5,30.5)".split(",")))
+    print(ptuple_to_tuple("(30.5,30.5)"))
+    #create_message("SetUnit",id,(x,y,player,map))
+    #create_message("SetUnit",3,(32,32,2))
+    #Unit.spawn_unit(Villager,float(position[0]),float(position[1]),self.players[0],self.map)

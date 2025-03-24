@@ -30,7 +30,7 @@ from zReseau import *
 
 # GameEngine Class
 class Mod_GameEngine:
-    def __init__(self, game_mode, map_size, players, sauvegarde=False):
+    def __init__(self, game_mode, map_size, players, sauvegarde=False,networkEngine=None):
         self.game_mode = game_mode
         self.map_size = map_size
         self.players = players
@@ -38,6 +38,7 @@ class Mod_GameEngine:
         self.turn = 0
         self.is_paused = False  # Flag to track if the game is paused
         self.changed_tiles = set()  # Set to track changed tiles
+        self.networkEngine = networkEngine
         """
         self.ias = [IA(player, player.ai_profile, self.map, time.time()) for player in self.players]  # Instantiate IA for each player
         for i in range(len(self.players)):
@@ -180,7 +181,7 @@ class Mod_GameEngine:
         else:
             print("set_resource problème lecture data, Resource:",data[2])
 
-    def run(self, stdscr,networkengine):
+    def run(self, stdscr):
         # Initialize the starting view position
         top_left_x, top_left_y = 0, 0
         viewport_width, viewport_height = 30, 30
@@ -192,7 +193,7 @@ class Mod_GameEngine:
         ######
         #sock = create_socket()
         #networkengine.socket.setblocking(0)
-        networkengine.gameEngine = self
+        self.networkEngine.gameEngine = self
 
         # Display the initial viewport
         stdscr.clear()  # Clear the screen
@@ -315,9 +316,9 @@ class Mod_GameEngine:
                 if not self.is_paused and self.turn % 10 == 0:
                     # Move units toward their target position
                     try:
-                        data, addr = networkengine.socket.recvfrom(1024)
+                        data = self.networkEngine.recvMessage()
                         print("received message: %s" % data)
-                        self.interpret_message(data,networkengine.socket)
+                        self.interpret_message(data,self.networkEngine.socket)
 
                     except BlockingIOError:
                         pass
@@ -338,6 +339,11 @@ class Mod_GameEngine:
             input("Press Enter to exit...")
 
         except KeyboardInterrupt:
+            try:
+                self.networkEngine.closeSocket()
+            except Exception as e :
+                self.debug_print(f"Error while closing the socket : {e}")
+            self.debug_print("Closing properly the socket")
             self.debug_print("Game interrupted. Exiting...", 'Yellow')
         finally:
             if self.gui_running:
@@ -351,7 +357,7 @@ class Mod_GameEngine:
             return False
 
     #condition de victoire: être le dernier joueur avec des bâtiments
-    def victory():
+    def victory(self):
     
         def big_text(text):
             root = tk.Tk()

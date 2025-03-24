@@ -36,7 +36,7 @@ if norj =='n' :
 else :
     project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
     sys.path.append(project_root)
-    from backend.Starter_File import start_mod_game
-    start_mod_game()
+    from backend.Starter_File import join_game
+    join_game()
     
 
