@@ -1,132 +1,192 @@
-#include "includes/networking.h"
-#include <fcntl.h>
+#include "includes/network.h"
 
-
+int main() {
 /*
-    LOG MODIFICATIONS : 
-    18/03/2025@tahakhetib - Merged amadou's code from udpserver.c to networkEngine.c
-                          - Added some functions to make the code more readable
-                                initalizeClientConnection : intialize the connection with the client if there is one;
-                                initialize
-                          - Added programRead functionnality
+there is a little problem with the broadcast, it sends le packet to all interfaces, including the server socket itself. I'll solve it tomorrow i.
 */
 
-
-/*
-    Plan de démarrage du programme
-    ** Ce plan de démarrage prends en compte que 2 instances du jeu pour le moment **
-        Démarrage du programme python d'abord, demande si on veut démarrer une partie multijoueurs, solo, ou rejoindre une partie multijoueurs
-
-        Si démarrer une partie multijoueurs -> 
-            Avant tout, Démarrage du canal de communication au niveau du programme python
-            Lancement du programme c avec un argument -n (Indique au programme de démarrer en mode écoute pour attendre une partie)
-            Au démarrage du programme C, avant toute chose, établissement de la connexion avec le programme principal
-            Ensuite lancement du initializeServer();
-            Si réception d'une string "CONNECT; IP_ADDR; PORT" -> Début du "handshake", avec envoi du monde complet, transmission de la commande au programme python, qui lui engage l'envoi de la séquence de bits .pkl au networkEngine;
-            Une fois la réception des bits du fichier .pkl par le networkEngine, début de l'envoi
-            --Attente de l'envoi--
-            Si envoi réussi -> réception d'une STRING "START_GAME;IP_ADDR;PORT" de la part de l'instance ayant rejoint la partie
-            Sinon -> Si TIMEOUT -> Arrêt de la connexion ; Sinon si "ERROR_CODE;TRACE;..." -> Retente d'envoyer/Gestion erreur
-            --Envoi terminé, envoi réussi---
-            Transmission du message au programme python qui lance la partie et envoie le message "GAME_STARTED;SERVER_IP;PORT"
-            Fin du démarrage d'une partie
-
-        Si rejoindre une partie multijoueur ->
-            Avant tout, Démarrage du canal de communication au niveau du programme python
-            Lancement du programme c avec les argument -r IP PORT (Indique au programme de se connecter à IP sur le port PORT)
-            Au démarrage du programme C, avant toute chose, établissement de la connexion avec le programme principal
-            Ensuite lancement du initializeClientConnectionIP(char* ip,port);
-            Envoi du "CONNECT; IP_ADDR; PORT" où IP_ADDR est l'ip de l'instance envoyant la string et PORT son port
-            --Attente de la réception des données sur le monde--
-            Si réception finie -> Transmission du monde au programme python; Si deserialisation réussie -> Envoi de la commande "START_GAME;IP_ADDR;PORT" au créateur de la partie; Sinon envoyer "ERROR_CODE;TRACE;..." au créateur de la partie
-            Sinon si TIMEOUT -> Arrêt de la connexion et envoi de l'erreur "ERROR_CODE;TRACE;" au programme python; Sinon envoyer "ERROR_CODE;TRACE;"
-            --Fin de récepetion des données sur le monde, réception réussie--
-            A la réception de la commande "GAME_STARTED;SERVER_IP;PORT", transmission au programme python et lancement de la boucle de jeu;
-            Fin du démarrage de la partie
-        
-        Si nouvelle partie classique ->
-            Lancement d'une partie classique comme avant,sans faire appel au networkEngine
-
-
-    ?? Questions pour plus tard ??
-        Si nous avons plus d'une instance voulant rejoindre le jeu, devons-nous lancer la partie et accepter les arrivées de nouveau joueurs à la volée, ou faire un mode "attente" pour connecter tout les clients puis lancer la partie ?
-
-*/
-
-
-
-
-int main(int argc, char *argv[]){
-    write(1,"[NetworkEngine] Starting Network Engine \n",42);
-    //char *ip = getip("eth0"); //ip of my eth0 interface
-    struct sockaddr_in client_sa, localhost_sa;
+    fd_set toserverfd, tolocalhost;
+    int bytes_recu = 0, selectfd;
+    char ip[22];
+    char received_msg[BUFFER_SIZE + 1];
+    struct sockaddr_in server_sa, client_sa, localhost_sa, python_sa;
     socklen_t len = sizeof(client_sa);
-    int clientBytes = 0;
-    // int clientStatus = 0; // Représente si le client est en train de transmettre des bytes ou en train d'en recevoir, n'est pas utilisé pour le moment
-    int programBytes = 0;
-    char cliMSG[BUFFER_SIZE+1];
-    char programMSG[BUFFER_SIZE+1];
-    networkStruct serverSocket;
-    networkStruct programSocket = initializeProgramSocket();
-    write(1,"[NetworkEngine] Ended Program socket init, starting handshake with PythonProgram\n ",83);
-    // initializeProgramConnection(programSocket);
-    if (argc < 2) {
-        printf("Usage: %s <options>\n", argv[0]);
-        return 1;
+    struct timeval timeout;
+    timeout.tv_sec = 10;
+    timeout.tv_usec = 0;
+
+    #ifdef _WIN32
+    // Initialisation de Winsock pour Windows
+    WSADATA wsaData;
+    if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0) {
+        stop("WSAStartup failed");
+    }
+    #endif
+
+    // Obtenir l'adresse IP
+    getip(INTERFACE_NAME, ip);
+    printf("%s\n", ip);
+    // exit(0);
+    if (ip == NULL) {
+        #ifdef _WIN32
+        WSACleanup();
+        #endif
+        stop("Failed to get IP address");
     }
 
-    char *option = argv[1];
+    // Initialisation des structures
+    memset(&client_sa, 0, sizeof(struct sockaddr_in));
+    memset(&localhost_sa, 0, sizeof(struct sockaddr_in));
+    memset(&python_sa, 0, sizeof(struct sockaddr_in));
+    memset(received_msg, 0, BUFFER_SIZE + 1);
 
-    switch (option[0]) {
-        case 'n':
-            // printf("Option n sélectionnée\n");
-            serverSocket = createGame(&client_sa, &len, &programSocket);
-            break;
-        case 'j':
-            // printf("Option j sélectionnée\n");
-            serverSocket = join_game("192.168.1.163", 8000);
-            break;
-        default:
-            printf("Option inconnue : %s\n", option);
-            break;
+    python_sa.sin_family = AF_INET;
+    python_sa.sin_addr.s_addr = inet_addr(LOCALHOSTIP);
+    python_sa.sin_port = htons(5006);
+
+    int udpserverfd = udpserver(&server_sa, SERVERPORT, ip);
+    int tolocalhostfd = udpserver(&localhost_sa, LOCALHOSTPORT, LOCALHOSTIP);
+
+    int client_socket[3], max_client = 3, max_sd, socket_descriptor, activity, i, read_bytes = 0;
+    for(int i = 0; i < max_client; i++){
+        client_socket[i] = 0;
     }
-    exit(0);
-    /*while (1)
-    {
-        // Attente d'une commande de la part d'un autre client;
-        clientBytes = recvfrom(serverSocket.sockFd, cliMSG, BUFFER_SIZE - 1, MSG_DONTWAIT, (struct sockaddr *)&client_sa, &len);
+    fd_set readfds;
+    printf("Waiting for an update...\n");
+    while (1) {
+        FD_ZERO(&readfds);
 
-        // Gestion de la reception d'une commande de la part d'une autre instance
-        if (clientBytes < 0 && errno != EAGAIN)
-        {
-            stop("error while recieving data from client");
-        }
-        else if (clientBytes > 0)
-        {
-            // clientStatus = 2; // indique que le client à écrit dans la socket
-            // programBytes = ;
-            if (sendto(programSocket.sockFd, cliMSG, BUFFER_SIZE - 1, MSG_DONTWAIT, (struct sockaddr *)&programSocket.sock_addr, programSocket.addrLen) < 0)
-            {
-                stop("Error while sending data to python program");
+        FD_SET(udpserverfd, &readfds);
+        FD_SET(tolocalhostfd, &readfds);
+        max_sd = tolocalhostfd > udpserverfd ? tolocalhostfd : udpserverfd;
+
+        for(i = 0; i < max_client; i++){
+            socket_descriptor = client_socket[i];
+            if(socket_descriptor > 0){
+                FD_SET(socket_descriptor, &readfds);
             }
-            bzero(cliMSG, BUFFER_SIZE + 1);
-        }
-        // Gestion de la réception de commandes de la part du programme python
-        programBytes = recvfrom(programSocket.sockFd, programMSG, BUFFER_SIZE - 1, MSG_DONTWAIT, (struct sockaddr *)&programSocket.sock_addr, &programSocket.addrLen);
-        if (programBytes < 0 && errno != EAGAIN)
-        {
-            stop("error while recieving data from program");
-        }
-        else
-        {
-            // clientStatus = 1;
-            if (sendto(serverSocket.sockFd, programMSG, BUFFER_SIZE - 1, 0, (struct sockaddr *)&client_sa, len) < 0)
-            {
-                stop("Error while sending data to instance");
+
+            if(socket_descriptor > max_sd){
+                max_sd = socket_descriptor;
             }
-            bzero(programMSG, BUFFER_SIZE + 1);
         }
-    }*/
-    
-    return EXIT_SUCCESS;
+
+        #ifdef _WIN32
+        // Windows : select n'a pas besoin de +1
+        if((activity = select(max_sd, &readfds, NULL, NULL, &timeout)) == SOCKET_ERROR) {
+            closesocket(udpserverfd);
+            closesocket(tolocalhostfd);
+            WSACleanup();
+            stop("Select error: ");
+        }
+        #else
+        // Linux : select a besoin de max_sd + 1
+        if((activity = select(max_sd + 1, &readfds, NULL, NULL, &timeout)) < 0 && errno != EINTR){
+            close(udpserverfd);
+            close(tolocalhostfd);
+            stop("Select error: ");
+        }
+        #endif
+
+        // Vérifie si un événement est survenu sur le descripteur udpserverfd
+        if (FD_ISSET(udpserverfd, &readfds)) {
+            printf("Activity detected on udpserverfd\n");
+
+            #ifdef _WIN32
+            bytes_recu = recvfrom(udpserverfd, received_msg, BUFFER_SIZE - 1, 0, (struct sockaddr *) &client_sa, (int *) &len);
+            if (bytes_recu == SOCKET_ERROR) {
+                if (WSAGetLastError() != WSAEWOULDBLOCK) {
+                    closesocket(udpserverfd);
+                    closesocket(tolocalhostfd);
+                    WSACleanup();
+                    stop("Reception error on udpserverfd: ");
+                }
+            }
+            #else
+            bytes_recu = recvfrom(udpserverfd, received_msg, BUFFER_SIZE - 1, MSG_DONTWAIT, (struct sockaddr *) &client_sa, (socklen_t *) &len);
+            if (bytes_recu < 0 && errno != EAGAIN) {
+                close(udpserverfd);
+                close(tolocalhostfd);
+                stop("Reception error on udpserverfd: ");
+            }
+            #endif
+
+            if (bytes_recu > 0) {
+                received_msg[bytes_recu] = '\0';
+                printf("%s\n", received_msg);
+
+                printf("Sending to localhost ...\n");
+                if (sendingUpdate(python_sa, tolocalhostfd, received_msg, bytes_recu) == -1) {
+                    #ifdef _WIN32
+                    closesocket(udpserverfd);
+                    closesocket(tolocalhostfd);
+                    WSACleanup();
+                    #else
+                    close(udpserverfd);
+                    close(tolocalhostfd);
+                    #endif
+                    stop("Sending to python program failed: ");
+                }
+                printf("Sent successfully!\n");
+            }
+        }
+
+        // Vérifie si un événement est survenu sur le descripteur tolocalhostfd
+        if (FD_ISSET(tolocalhostfd, &readfds)) {
+            printf("Activity detected on tolocalhostfd\n");
+
+            #ifdef _WIN32
+            bytes_recu = recvfrom(tolocalhostfd, received_msg, BUFFER_SIZE - 1, 0, (struct sockaddr *) &client_sa, (int *) &len);
+            if (bytes_recu == SOCKET_ERROR) {
+                if (WSAGetLastError() != WSAEWOULDBLOCK) {
+                    closesocket(tolocalhostfd);
+                    WSACleanup();
+                    stop("Reception error on tolocalhostfd: ");
+                }
+            }
+            #else
+            bytes_recu = recvfrom(tolocalhostfd, received_msg, BUFFER_SIZE - 1, MSG_DONTWAIT, (struct sockaddr *) &client_sa, &len);
+            if (bytes_recu < 0 && errno != EAGAIN) {
+                close(tolocalhostfd);
+                stop("Reception error on tolocalhostfd: ");
+            }
+            #endif
+
+            if (bytes_recu > 0) {
+                received_msg[bytes_recu] = '\0';
+                printf("Sending %s to the other players in broadcast...\n", received_msg);
+
+                if (broadcast_sending(udpserverfd, received_msg, bytes_recu) != 0) {
+                    #ifdef _WIN32
+                    closesocket(udpserverfd);
+                    closesocket(tolocalhostfd);
+                    WSACleanup();
+                    #else
+                    close(udpserverfd);
+                    close(tolocalhostfd);
+                    #endif
+                    stop("Sending to python program failed: ");
+                }
+
+                printf("Broadcast sent!\n");
+            }
+        }
+    }
+
+    // Nettoyage
+    #ifdef _WIN32
+    for(i = 0; i < max_client; i++) {
+        if(client_socket[i] > 0) {
+            closesocket(client_socket[i]);
+        }
+    }
+    closesocket(udpserverfd);
+    closesocket(tolocalhostfd);
+    WSACleanup();
+    #else
+    closeAll(client_socket, max_client);
+    close(udpserverfd);
+    close(tolocalhostfd);
+    #endif
+    return 0;
 }

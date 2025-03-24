@@ -1,6 +1,6 @@
 CC = gcc
 CFLAGS = -Wall -Wextra 
-SRC = networkEngine.c includes/networking.c
+SRC = networkEngine.c includes/network.c
 OBJ = $(SRC:.c=.o)
 EXEC = networkEngine
 
