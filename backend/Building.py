@@ -28,7 +28,7 @@ class Building:
         self.nb_workers = None # Number of workers for the building --> impact building time
         self.max_hp = hp
         self.is_attacked = False
-        self.is_sent = False
+        self.sent_count = 10 #Nombre d'envois restant sur le réseau
         global IDMAKERB
         self.id = IDMAKERB
         IDMAKERB += 1
