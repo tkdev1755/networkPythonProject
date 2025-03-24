@@ -12,7 +12,7 @@ def decoupe(string):
     return string.split(";")
 
 def ptuple_to_tuple(ptuple): #passe une string "(a,..,z)" en tuple (a,..,z)
-    return tuple(map(float,ptuple[1:-1].split(",")))
+    return tuple(map(str,ptuple[1:-1].split(",")))
 
 #fonction pour créer un message
 def create_message(action, id, data):

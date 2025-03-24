@@ -212,7 +212,7 @@ class Villager(Unit):
         self.name = name
         self.task = None
         self.last_gathered = None
-        self.target_resource = None
+        self.target_resource = None   #TARGET_RESOURCE est une POSITION
         self.range = 0.99
         self.is_acting = None
         self.position = position

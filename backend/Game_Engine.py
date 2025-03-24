@@ -84,41 +84,79 @@ class GameEngine:
         return self.current_time
 
     #fonction pour interpréter un message 
-    def interpret_message(self,message):
+    def interpret_message(self,message,sock):
         action, id, data=message.split(";")
         if action=="SetUnit":
             self.move_by_id(int(id),ptuple_to_tuple(data))
         elif action=="SetBuilding":
             self.set_building_by_id(int(id),ptuple_to_tuple(data))
         elif action=="SetResource":
-            pass
+            self.set_resource_by_position(int(id),ptuple_to_tuple(data))
+        elif action=="AskSize":
+            self.send_world_size(sock)
+        else:
+            print("Action inconnue pour le moment:",action)
 
     def move_by_id(self,id,data): #juste, remplace la position de l'unité d'id id par position 
-        pos = (data[0],data[1])
+        pos = (float(data[0]),float(data[1]))
         for player in self.players:
             print(player.units)
-            if player.id == data[2] :
+            if player.id == int(data[2]) :
                 for unit in player.units :
                     if unit.id == id :
                         unit.position = pos
                         return
-        newguy =Unit.spawn_unit(Villager,int(pos[0]),int(pos[1]),self.players[int(data[2])-1],self.map)
+        newguy =Unit.spawn_unit(Villager,int(float(pos[0])),int(float(pos[1])),self.players[int(data[2])-1],self.map)
         newguy.id = int(id)
         print(newguy.id)
 
     def set_building_by_id(self,id,data): #action,id,(player.id,name,x,y)
-        pos = (data[2],data[3])
-        for player in self.players:
+        """for player in self.players:
             if player.id == data[0] :
                 for building in player.buildings :
                     if building.id == id :
                         return #building aleady exists
-        newbuild = Building.spawn_building(data[1],int(pos[0]),int(pos[1]),self.players[int(data[0])-1],self.map)
+        if data[1] == "TownCenter":
+            this_class=Keep
+        elif data[1] == "House":
+            this_class=House
+        elif data[1] == "Camp":
+            this_class=Camp
+        elif data[1] == "Farm":
+            this_class=Farm
+        elif data[1] == "Barracks":
+            this_class=Barracks
+        elif data[1] == "Stable":
+            this_class=Stable
+        elif data[1] == "ArcheryRange":
+            this_class=ArcheryRange
+        else:
+            print("problèmes lecture classe batiment:",data[1])
+        building_instance = TownCenter(self.players[int(data[0])-1])
+        newbuild = Building.spawn_building(self.players[int(data[0])-1],int(data[2]),int(data[3]),this_class(),self.map)
         newbuild.id = int(id)
-        print(newbuild.id)
+        print(newbuild.id)"""
 
-    def set_tile_by_id(self,id,data): #action,id,(x,y,) ,self.map.grid[y][x] pour avoir 
-        pass
+    def set_resource_by_position(self,id,data): #action,id,(x,y,ressource,amount) ,self.map.grid[y][x] pour avoir la tuile, 
+        x,y = int(data[0]),int(data[1])
+        amount = data[3]
+        if data[2] == "None":
+            self.map.grid[y][x].resource = None
+        elif data[2] == "Wood":
+            self.map.grid[y][x].resource = Wood()
+            self.map.grid[y][x].resource.amount = amount
+        elif data[2] == "Gold":
+            self.map.grid[y][x].resource = Gold()
+            self.map.grid[y][x].resource.amount = amount
+        elif data[2] == "Food":
+            self.map.grid[y][x].resource = Food()
+            self.map.grid[y][x].resource.amount = amount
+        else:
+            print("set_resource problème lecture data:",data[2])
+
+    def send_world_size(self,sock):
+        message = create_message("SendSize",0,(self.map.width,self.map.height))
+        send_message(message,sock)
 
     def run(self, stdscr, networkengine):
         # Initialize the starting view position
@@ -241,12 +279,12 @@ class GameEngine:
                 #check for any messages received
                 #message = create_message("SetUnit",3,(32,32,2))
                 #self.interpret_message(message)
-                '''try:
+                try:
                     data, addr = sock.recvfrom(1024)
                     print("received message: %s" % data)
-                    self.interpret_message(data.decode('utf-8'))
+                    self.interpret_message(data.decode('utf-8'),sock)
                 except BlockingIOError:
-                    pass  '''
+                    pass
 
                 #call the IA
                 if not self.is_paused and self.turn % 200 == 0 and self.IA_used == True: # Call the IA every 5 turns: change 0, 5, 10, 15, ... depending on lag
@@ -274,7 +312,16 @@ class GameEngine:
                             elif unit.task == "gathering" or unit.task == "returning":
                                 action._gather(unit, unit.last_gathered, self.get_current_time())
                             elif unit.task == "marching":
+                                x,y = unit.target_resource #target_resource est une position, ligne ajoutée par moi
                                 action.gather_resources(unit, unit.last_gathered, self.get_current_time())
+                                #envoyer "SetResource;ID;Data" pour indiquer l'état de la ressource, data=(x,y,ressource,amount)
+                                this_tile = self.map.grid[y][x]
+                                if this_tile.resource == None:
+                                    message=create_message("SetResource",this_tile.id,(x,y,"None",0))
+                                else:
+                                    message=create_message("SetResource",this_tile.id,(x,y,this_tile.resource.type,this_tile.resource.amount))
+                                send_message(message,sock)
+                                print(message)
                             elif unit.task == "is_attacked":
                                 action._attack(unit, unit.is_attacked_by, self.get_current_time())
                             elif unit.task == "going_to_construction_site":
@@ -282,12 +329,11 @@ class GameEngine:
                             elif unit.task == "constructing":
                                 action._construct(unit, unit.construction_type, unit.target_building[0], unit.target_building[1], player, self.get_current_time())
                         for building in player.buildings:
-                            #si le building n'a jamais été envoyé et est construit, l'envoyer
-                            print(building.is_sent,building.built,end=" / ")
-                            if (not building.is_sent and building.built): #action,id,(player.id,name,x,y)
+                            #envoie le building pendant dix tours à la création, le renverra de temps en temps
+                            if building.sent_count: #action,id,(player.id,name,x,y)
                                 message=create_message("SetBuilding", building.id, (building.player.id,building.name,building.position[0],building.position[1]))
                                 send_message(message,sock)
-                                building.is_sent = True
+                                building.sent_count -= 1
                                 print(message)
 
                             if hasattr(building, 'training_queue') and building.training_queue != []:

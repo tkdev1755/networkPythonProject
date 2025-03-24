@@ -292,7 +292,7 @@ class Map:
 
 # Les IDs des Tiles iront de 500.000 à 999.999
 global IDMAKERT
-IDMAKERT = 100001
+IDMAKERT = 500000
 
 class Tile:
     def __init__(self, x, y):
