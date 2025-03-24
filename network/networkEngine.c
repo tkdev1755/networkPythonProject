@@ -1,13 +1,12 @@
 #include "includes/network.h"
 
-int main() {
-/*
-there is a little problem with the broadcast, it sends le packet to all interfaces, including the server socket itself. I'll solve it tomorrow i. 
-*/
 
+
+
+int main() {
     fd_set toserverfd, tolocalhost;
     int bytes_recu = 0, selectfd;
-    char ip[22];
+    char ip[INET_ADDRSTRLEN];
     char received_msg[BUFFER_SIZE + 1];
     struct sockaddr_in server_sa, client_sa, localhost_sa, python_sa;
     socklen_t len = sizeof(client_sa);
@@ -25,7 +24,7 @@ there is a little problem with the broadcast, it sends le packet to all interfac
 
     // Obtenir l'adresse IP
     getip(INTERFACE_NAME, ip);
-    printf("%s\n", ip);
+    // printf("My ip address :%s\n", ip);
     // exit(0);
     if (ip == NULL) {
         #ifdef _WIN32
@@ -39,6 +38,7 @@ there is a little problem with the broadcast, it sends le packet to all interfac
     memset(&localhost_sa, 0, sizeof(struct sockaddr_in));
     memset(&python_sa, 0, sizeof(struct sockaddr_in));
     memset(received_msg, 0, BUFFER_SIZE + 1);
+    
 
     python_sa.sin_family = AF_INET;
     python_sa.sin_addr.s_addr = inet_addr(LOCALHOSTIP);
@@ -111,27 +111,30 @@ there is a little problem with the broadcast, it sends le packet to all interfac
             }
             #endif
 
-            if (bytes_recu > 0) {
-                received_msg[bytes_recu] = '\0';
-                printf("%s\n", received_msg);
-
-                printf("Sending to localhost ...\n");
-                if (sendingUpdate(python_sa, tolocalhostfd, received_msg, bytes_recu) == -1) {
-                    #ifdef _WIN32
-                    closesocket(udpserverfd);
-                    closesocket(tolocalhostfd);
-                    WSACleanup();
-                    #else
-                    close(udpserverfd);
-                    close(tolocalhostfd);
-                    #endif
-                    stop("Sending to python program failed: ");
+            if(strncmp(inet_ntoa(client_sa.sin_addr), ip, strlen(inet_ntoa(client_sa.sin_addr))) != 0){
+                
+                if (bytes_recu > 0) {
+                    received_msg[bytes_recu] = '\0';
+                    printf("%s\n", received_msg);
+                    
+                    printf("Sending to localhost ...\n");
+                    if (sendingUpdate(python_sa, tolocalhostfd, received_msg, bytes_recu) == -1) {
+                        #ifdef _WIN32
+                        closesocket(udpserverfd);
+                        closesocket(tolocalhostfd);
+                        WSACleanup();
+                        #else
+                        close(udpserverfd);
+                        close(tolocalhostfd);
+                        #endif
+                        stop("Sending to python program failed: ");
+                    }
+                    printf("Sent successfully!\n");
                 }
-                printf("Sent successfully!\n");
             }
         }
-
-        // Vérifie si un événement est survenu sur le descripteur tolocalhostfd
+            
+            // Vérifie si un événement est survenu sur le descripteur tolocalhostfd
         if (FD_ISSET(tolocalhostfd, &readfds)) {
             printf("Activity detected on tolocalhostfd\n");
 

@@ -75,7 +75,6 @@ int udpserver(struct sockaddr_in *server_sa, int port, char * ip) {
         stop("Socket creation failed!");
     }
     #endif
-
     if(ip == NULL) {
         stop("IP adress is null!");
     }
@@ -112,7 +111,7 @@ char * getip(const char * interface_name, char * ip) {
     wchar_t* wInterfaceName = charToWChar(interface_name);
     ULONG ulOutBufLen = 0;
     DWORD dwRetVal = 0;
-    int interfaceTrouvee = 0;
+    int interface_found = 0;
 
     // Variables pour stocker les informations des adaptateurs
     PIP_ADAPTER_ADDRESSES pAddresses = NULL;
@@ -133,14 +132,14 @@ char * getip(const char * interface_name, char * ip) {
     dwRetVal = GetAdaptersAddresses(AF_INET, GAA_FLAG_INCLUDE_PREFIX, NULL, pAddresses, &ulOutBufLen);
     
     if (dwRetVal == NO_ERROR) {
-        // Parcourir la liste des adaptateurs
+        // Browsing all adapters
         pCurrAddresses = pAddresses;
         while (pCurrAddresses) {
-            // Comparer le nom de l'interface avec celui recherché
+            // Check whether the interface name matches
             if (wcscmp(pCurrAddresses->FriendlyName, wInterfaceName) == 0) {
-                interfaceTrouvee = 1;
+                interface_found = 1;
                 printf("\nInformations pour l'interface: %ls\n", pCurrAddresses->FriendlyName);
-                // Obtenir les adresses unicast pour cet adaptateur
+                
                 pUnicast = pCurrAddresses->FirstUnicastAddress;
                 if (pUnicast == NULL) {
                     printf("Aucune adresse IP trouvée pour cette interface.\n");
@@ -152,16 +151,16 @@ char * getip(const char * interface_name, char * ip) {
                     struct sockaddr_in* sockaddr = (struct sockaddr_in*)pUnicast->Address.lpSockaddr;
                     inet_ntop(AF_INET, &(sockaddr->sin_addr), ip, INET_ADDRSTRLEN);
                     pUnicast = pUnicast->Next;
+
                 }
                 
-                // Une fois trouvée, on peut sortir de la boucle
                 break;
             }
             
             pCurrAddresses = pCurrAddresses->Next;
         }
         
-        if (!interfaceTrouvee) {
+        if (!interface_found) {
             printf("Interface '%ls' non trouvée.\n", interface_name);
         }
     } else {
@@ -182,17 +181,18 @@ char * getip(const char * interface_name, char * ip) {
         perror("getifaddrs");
         return NULL;
     }
-    
     // browse all interfaces
     for (ifa = ifaddr; ifa != NULL; ifa = ifa->ifa_next) {
         if (ifa->ifa_addr == NULL) continue;
-
+        
         if (ifa->ifa_addr->sa_family == AF_INET && strcmp(ifa->ifa_name, interface_name) == 0) {
             struct sockaddr_in *sa = (struct sockaddr_in *)ifa->ifa_addr;
             inet_ntop(AF_INET, &(sa->sin_addr), ip, INET_ADDRSTRLEN);
-            freeifaddrs(ifaddr);
-            return ip;
+            // freeifaddrs(ifaddr);
+            break;
+            // return ip;
         }
+        // printf("My ip address :%s\n", );
     }
 
     freeifaddrs(ifaddr);
@@ -272,7 +272,6 @@ int broadcast_sending(int udpserverfd, char * message, int len) {
             dst.sin_family = AF_INET;
             dst.sin_addr.s_addr = IPAddr.S_un.S_addr;
             dst.sin_port = htons(SERVERPORT);
-            
             sendingUpdate(dst, udpserverfd, message, len);
         }
     }
@@ -315,7 +314,7 @@ int broadcast_sending(int udpserverfd, char * message, int len) {
         memcpy(&dst, &ifr->ifr_broadaddr, sizeof(ifr->ifr_broadaddr));
         dst.sin_family = AF_INET;
         dst.sin_port = htons(SERVERPORT);
-        
+
         sendingUpdate(dst, udpserverfd, message, len);
     }
     #endif

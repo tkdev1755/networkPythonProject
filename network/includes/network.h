@@ -1,37 +1,36 @@
 #ifndef NETWORKING
 #define NETWORKING
-// #define _WIN64
 #define BUFFER_SIZE 1024
 #define MAXCLIENTS 2
 #define LOCALHOSTPORT 5005
 #define SERVERPORT 8000
 #define MAXLINE 2048
 #define LOCALHOSTIP "127.0.0.1"
-#define INTERFACE_NAME "Wi-Fi"
+#define INTERFACE_NAME "eth0"
 
 // Détection du système d'exploitation
 #if defined(_WIN32) || defined(_WIN64) || defined(WIN32)
-    // Inclusions Windows
-    #include <winsock2.h>
-    #include <ws2tcpip.h>
-    #include <windows.h>
-    #include <iphlpapi.h>
-    #pragma comment(lib, "iphlpapi.lib")
-    #pragma comment(lib, "ws2_32.lib")
-    typedef int socklen_t;
-    #define bzero(b,len) (memset((b), '\0', (len)), (void) 0)
-    #define close(s) closesocket(s)
+// Inclusions Windows
+#include <winsock2.h>
+#include <ws2tcpip.h>
+#include <windows.h>
+#include <iphlpapi.h>
+#pragma comment(lib, "iphlpapi.lib")
+#pragma comment(lib, "ws2_32.lib")
+typedef int socklen_t;
+#define bzero(b,len) (memset((b), '\0', (len)), (void) 0)
+#define close(s) closesocket(s)
 #else
-    // Inclusions Linux/UNIX
-    #include <sys/socket.h>
-    #include <sys/select.h>
-    #include <netinet/in.h>
-    #include <arpa/inet.h>
-    #include <ifaddrs.h>
-    #include <net/if.h>
-    #include <sys/ioctl.h>
-    #include <netdb.h>
-    #include <sys/types.h>
+// Inclusions Linux/UNIX
+#include <sys/socket.h>
+#include <sys/select.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <ifaddrs.h>
+#include <net/if.h>
+#include <sys/ioctl.h>
+#include <netdb.h>
+#include <sys/types.h>
 #endif
 
 // Inclusions communes
@@ -42,7 +41,7 @@
 #include <signal.h>
 
 #ifdef _WIN32
-    // Pour Windows
+// Pour Windows
     #define SOCKET_ERROR_CODE WSAGetLastError()
 #else
     // Pour Linux/UNIX
