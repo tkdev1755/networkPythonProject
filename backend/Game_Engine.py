@@ -287,7 +287,8 @@ class GameEngine:
                                 action.gather_resources(unit, unit.last_gathered, self.get_current_time())
                                 #envoyer "SetResource;ID;Data" pour indiquer l'état de la ressource, data=(x,y,ressource,amount)
                                 x,y = unit.target_resource #target_resource est une position
-                                message=create_message("SetResource",self.map[y][x].id,(x,y,self.map[y][x].resource.type,self.map[y][x].resource.amount))
+                                this_tile = self.map.grid[y][x]
+                                message=create_message("SetResource",this_tile.id,(x,y,this_tile.resource.type,this_tile.resource.amount))
                                 send_message(message,sock)
                                 print(message)
                             elif unit.task == "is_attacked":
