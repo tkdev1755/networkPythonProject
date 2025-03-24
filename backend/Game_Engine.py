@@ -117,8 +117,19 @@ class GameEngine:
         newbuild.id = int(id)
         print(newbuild.id)
 
-    def set_tile_by_id(self,id,data): #action,id,(x,y,) ,self.map.grid[y][x] pour avoir 
-        pass
+    def set_resource_by_position(self,id,data,amount): #action,id,(x,y,ressource,amount) ,self.map.grid[y][x] pour avoir la tuile, 
+        x,y = data[0],data[1]
+        if data[2] == "None":
+            self.map.grid[y][x].resource = None
+        elif data[2] == "Wood":
+            self.map.grid[y][x].resource = Wood()
+            self.map.grid[y][x].resource.amount = amount
+        elif data[2] == "Gold":
+            self.map.grid[y][x].resource = Gold()
+            self.map.grid[y][x].resource.amount = amount
+        elif data[2] == "Food":
+            self.map.grid[y][x].resource = Food()
+            self.map.grid[y][x].resource.amount = amount
 
     def run(self, stdscr):
         # Initialize the starting view position
@@ -274,6 +285,11 @@ class GameEngine:
                                 action._gather(unit, unit.last_gathered, self.get_current_time())
                             elif unit.task == "marching":
                                 action.gather_resources(unit, unit.last_gathered, self.get_current_time())
+                                #envoyer "SetResource;ID;Data" pour indiquer l'état de la ressource, data=(x,y,ressource,amount)
+                                x,y = unit.target_resource #target_resource est une position
+                                message=create_message("SetResource",self.map[y][x].id,(x,y,self.map[y][x].resource.type,self.map[y][x].resource.amount))
+                                send_message(message,sock)
+                                print(message)
                             elif unit.task == "is_attacked":
                                 action._attack(unit, unit.is_attacked_by, self.get_current_time())
                             elif unit.task == "going_to_construction_site":
