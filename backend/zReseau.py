@@ -1,7 +1,7 @@
 #fonctions permettant l'interprétation de messages "Action;ID;Data"
 from pygame.display import update
 from network.test_1_c_version import message
-
+import uuid
 
 #"Set;ID;Data" demande la modification de l'état de l'objet d'id ID
 
@@ -62,4 +62,35 @@ def move_by_id(self,id,position): #juste, remplace la position de l'unité d'id 
             Unit.spawn_unit(None,Villager,position[0],position[1],self.players[0],self.map)
 '''
 
-print("test!")
+class NetworkEngine:
+
+    def __init__(self,sendSocket, gameEngine):
+        self.socket = sendSocket
+        self.gameEngine, = gameEngine
+        self.name = f"PL-{uuid.uuid1().hex[:10]}"
+
+    def isOwner(self,id,position):
+        status = False # TEMP - à venir ici condition vraie si on est bien propriétaire ou fausse si on ne l'est pas
+        return status
+
+    def askForProperty(self, id, position):
+        pMessage = f"get;{id};{position}"
+        send_message(pMessage, self.socket)
+
+    # À Voir si on doit céder la propriété immédiatement dès qu'elle est demandée
+    # où envoyer un message "yield;id;{data}"
+    def sendProperty(self,id,position):
+        if self.isOwner(id,position):
+            propertyMessage = f"owner;{self.name};" # Peut changer de syntaxe
+            send_message(propertyMessage, self.socket)
+            update()
+    def updateProperty(self, id, position, owner):
+        pass
+
+    # Fonction permettant vérifier si le joueur est propriétaire de l'entité
+    # A lancer avant d'effectuer une modification
+    def checkForProperty(self, id, position):
+        if not self.isOwner(id,position):
+            self.askForProperty(id,position)
+        else:
+            print("Already owner, so able to do modifications on")
