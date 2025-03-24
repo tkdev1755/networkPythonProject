@@ -120,11 +120,12 @@ class GameEngine:
     def set_tile_by_id(self,id,data): #action,id,(x,y,) ,self.map.grid[y][x] pour avoir 
         pass
 
-    def run(self, stdscr):
+    def run(self, stdscr, networkengine):
         # Initialize the starting view position
         top_left_x, top_left_y = 0, 0
         viewport_width, viewport_height = 30, 30
         # Display the initial viewport
+        networkengine.gameEngine = self
         stdscr.clear()  # Clear the screen
         
         if self.terminalon :

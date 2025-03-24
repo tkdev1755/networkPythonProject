@@ -5,6 +5,7 @@ import curses
 import os
 import time
 from Players import *
+from zReseau import *
 
 # Game Mode
 GameMode = None  # "Utopia" or "Gold Rush"
@@ -795,6 +796,8 @@ class PlayerSettingsMenu:
 def start_menu(save_file=None):
     menu = StartMenu()
     action = menu.run()
+    sock = create_socket()
+    networkengine = NetworkEngine(sock)
 
     if action == 'Start Game':
         settings_menu = GameSettingsMenu()
@@ -840,7 +843,7 @@ def start_menu(save_file=None):
                     map_size=map_size,
                     players=players,
                     sauvegarde=False
-                ).run(stdscr))
+                ).run(stdscr,networkengine))
             else:
                 # If player settings menu was closed, return to main menu
                 return start_menu(save_file)
@@ -870,6 +873,8 @@ def start_game(stdscr, save_file=None):
     print("import sans soucis ")
     from Game_Engine import GameEngine
     curses.curs_set(0)
+    sock = create_socket()
+    networkengine = NetworkEngine(sock)
     stdscr.clear()
 
     if save_file:
@@ -888,11 +893,19 @@ def start_game(stdscr, save_file=None):
             sauvegarde=False
         )
 
-    game_engine.run(stdscr)
+    game_engine.run(stdscr,networkengine)
+
+
 def start_mod_game ():
-    players.clear()
-    print("Répertoire actuel :", os.getcwd())
     from Mod_Game_Engine import Mod_GameEngine
+    players.clear()
+    sock = create_socket()
+    sock.setblocking(1)
+    networkengine = NetworkEngine(sock)
+    networkengine.ask_size()
+    #size = networkengine.wait_size()
+    sock.setblocking(0)
+    
     P1 = Player(
                 f'Player 1',
                 'Marines',
@@ -913,4 +926,4 @@ def start_mod_game ():
                 map_size=map_size,
                 players=players,
                 sauvegarde=False
-            ).run(stdscr))
+            ).run(stdscr,networkengine))

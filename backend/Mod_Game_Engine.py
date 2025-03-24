@@ -130,7 +130,7 @@ class Mod_GameEngine:
         except AttributeError:
             print("Attribut error")
 
-    def run(self, stdscr):
+    def run(self, stdscr,networkengine):
         # Initialize the starting view position
         top_left_x, top_left_y = 0, 0
         viewport_width, viewport_height = 30, 30
@@ -140,7 +140,9 @@ class Mod_GameEngine:
         ######
         # SOCKET ??????????
         ######
-        sock = create_socket()
+        #sock = create_socket()
+        #networkengine.socket.setblocking(0)
+        networkengine.gameEngine = self
 
         # Display the initial viewport
         stdscr.clear()  # Clear the screen
@@ -263,7 +265,7 @@ class Mod_GameEngine:
                 if not self.is_paused and self.turn % 10 == 0:
                     # Move units toward their target position
                     try:
-                        data, addr = sock.recvfrom(1024)
+                        data, addr = networkengine.socket.recvfrom(1024)
                         print("received message: %s" % data)
                         self.interpret_message(data)
 

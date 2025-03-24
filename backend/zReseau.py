@@ -1,6 +1,8 @@
 #fonctions permettant l'interprétation de messages "Action;ID;Data"
 from pygame.display import update
 import uuid
+import time
+import sys
 
 #"Set;ID;Data" demande la modification de l'état de l'objet d'id ID
 
@@ -63,10 +65,11 @@ def move_by_id(self,id,position): #juste, remplace la position de l'unité d'id 
 
 class NetworkEngine:
 
-    def __init__(self,sendSocket, gameEngine):
+    def __init__(self,sendSocket, gameEngine=None, size  = None):
         self.socket = sendSocket
         self.gameEngine = gameEngine
         self.name = f"PL-{uuid.uuid1().hex[:10]}"
+        self.size = size
 
     def isOwner(self,id):
         status = False # TEMP - à venir ici condition vraie si on est bien propriétaire ou fausse si on ne l'est pas
@@ -96,3 +99,28 @@ class NetworkEngine:
             self.askForProperty(id)
         else:
             print("Already owner, so able to do modifications on")
+
+    
+    def ask_size (self):
+        send_message(f"AskSize;;",self.socket)
+
+    def send_size (self,size):
+        send_message(f"SendSize;0;{size}",self.socket)
+    
+    def wait_size (self,t):
+        now = time.time 
+        while now - t < 10 :
+            try:
+                data, addr = self.socket.recvfrom(1024)
+                print("received message: %s" % data)
+                message = message.decode('utf-8')
+                action, id, data = message.split(";")
+                if action == "SendSize":
+                    return ptuple_to_tuple(data)
+
+
+            except BlockingIOError:
+                pass
+        
+        sys.quit()
+
