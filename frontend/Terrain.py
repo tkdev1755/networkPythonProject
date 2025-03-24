@@ -290,6 +290,10 @@ class Map:
             pass
         return nearest_drop_point    
 
+# Les IDs des Tiles iront de 500.000 à 999.999
+global IDMAKERT
+IDMAKERT = 100001
+
 class Tile:
     def __init__(self, x, y):
         self.x = x
@@ -298,6 +302,9 @@ class Tile:
         self.building = None
         self.unit = []
         self.rubble = None
+        global IDMAKERT
+        self.id = IDMAKERT
+        IDMAKERT += 1
 
     def __str__(self):
         if self.unit:

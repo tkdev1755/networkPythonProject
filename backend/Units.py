@@ -4,8 +4,9 @@ from Building import TownCenter
 from logger import debug_print
 from Starter_File import global_speedS
 
-global IDMAKER
-IDMAKER = 1
+# Les IDs des Units iront de 1 à 99.999
+global IDMAKERU
+IDMAKERU = 1
 
 # Unit Class
 class Unit:
@@ -28,9 +29,9 @@ class Unit:
         self.current_frame = 0  # Initialiser à 0 si absent
         self.frame_counter = 0 
         self.is_moving = False
-        global IDMAKER
-        self.id = IDMAKER
-        IDMAKER += 1
+        global IDMAKERU
+        self.id = IDMAKERU
+        IDMAKERU += 1
 
     def __str__(self):
         return self.symbol  # Ensure the building is represented by just the symbol

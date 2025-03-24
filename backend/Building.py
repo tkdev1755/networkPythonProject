@@ -7,8 +7,9 @@ from backend.Starter_File import players as players_list
 from logger import debug_print
 from Starter_File import global_speedS
 
+# Les IDs des Buildings iront de 100.000 à 199.999
 global IDMAKERB
-IDMAKERB = 1000
+IDMAKERB = 100000
 
 # Building Class
 class Building:

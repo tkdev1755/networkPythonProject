@@ -88,6 +88,10 @@ class GameEngine:
         action, id, data=message.split(";")
         if action=="SetUnit":
             self.move_by_id(int(id),ptuple_to_tuple(data))
+        elif action=="SetBuilding":
+            self.set_building_by_id(int(id),ptuple_to_tuple(data))
+        elif action=="SetResource":
+            pass
 
     def move_by_id(self,id,data): #juste, remplace la position de l'unité d'id id par position 
         pos = (data[0],data[1])
@@ -101,6 +105,20 @@ class GameEngine:
         newguy =Unit.spawn_unit(Villager,int(pos[0]),int(pos[1]),self.players[int(data[2])-1],self.map)
         newguy.id = int(id)
         print(newguy.id)
+
+    def set_building_by_id(self,id,data): #action,id,(player.id,name,x,y)
+        pos = (data[2],data[3])
+        for player in self.players:
+            if player.id == data[0] :
+                for building in player.buildings :
+                    if building.id == id :
+                        return #building aleady exists
+        newbuild = Building.spawn_building(data[1],int(pos[0]),int(pos[1]),self.players[int(data[0])-1],self.map)
+        newbuild.id = int(id)
+        print(newbuild.id)
+
+    def set_tile_by_id(self,id,data): #action,id,(x,y,) ,self.map.grid[y][x] pour avoir 
+        pass
 
     def run(self, stdscr):
         # Initialize the starting view position
@@ -265,7 +283,7 @@ class GameEngine:
                         for building in player.buildings:
                             #si le building n'a jamais été envoyé et est construit, l'envoyer
                             print(building.is_sent,building.built,end=" / ")
-                            if (not building.is_sent) and building.built : #action,id,(player.id,name,x,y)
+                            if (not building.is_sent and building.built): #action,id,(player.id,name,x,y)
                                 message=create_message("SetBuilding", building.id, (building.player.id,building.name,building.position[0],building.position[1]))
                                 send_message(message,sock)
                                 building.is_sent = True
