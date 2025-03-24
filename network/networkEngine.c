@@ -111,25 +111,31 @@ int main() {
             }
             #endif
 
+
+
             if(strncmp(inet_ntoa(client_sa.sin_addr), ip, strlen(inet_ntoa(client_sa.sin_addr))) != 0){
-                
-                if (bytes_recu > 0) {
-                    received_msg[bytes_recu] = '\0';
-                    printf("%s\n", received_msg);
-                    
-                    printf("Sending to localhost ...\n");
-                    if (sendingUpdate(python_sa, tolocalhostfd, received_msg, bytes_recu) == -1) {
-                        #ifdef _WIN32
-                        closesocket(udpserverfd);
-                        closesocket(tolocalhostfd);
-                        WSACleanup();
-                        #else
-                        close(udpserverfd);
-                        close(tolocalhostfd);
-                        #endif
-                        stop("Sending to python program failed: ");
+                if(strncmp(inet_ntoa(client_sa.sin_addr), LOCALHOSTIP, strlen(inet_ntoa(client_sa.sin_addr))) != 0){
+                    //it isn't from localhost
+                    if (bytes_recu > 0) {
+                        received_msg[bytes_recu] = '\0';
+                        printf("%s\n", received_msg);
+                        
+                        printf("Sending to localhost ...\n");
+                        if (sendingUpdate(python_sa, tolocalhostfd, received_msg, bytes_recu) == -1) {
+                            #ifdef _WIN32
+                            closesocket(udpserverfd);
+                            closesocket(tolocalhostfd);
+                            WSACleanup();
+                            #else
+                            close(udpserverfd);
+                            close(tolocalhostfd);
+                            #endif
+                            stop("Sending to python program failed: ");
+                        }
+                        printf("Sent successfully!\n");
                     }
-                    printf("Sent successfully!\n");
+                }else{
+                    
                 }
             }
         }
