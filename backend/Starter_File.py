@@ -903,7 +903,7 @@ def start_mod_game ():
     sock.setblocking(1)
     networkengine = NetworkEngine(sock)
     networkengine.ask_size()
-    #size = networkengine.wait_size()
+    size = networkengine.wait_size()
     sock.setblocking(0)
     
     P1 = Player(
@@ -923,7 +923,7 @@ def start_mod_game ():
 
     curses.wrapper(lambda stdscr: Mod_GameEngine(
                 game_mode="Empty",
-                map_size=map_size,
+                map_size=size,
                 players=players,
                 sauvegarde=False
             ).run(stdscr,networkengine))
