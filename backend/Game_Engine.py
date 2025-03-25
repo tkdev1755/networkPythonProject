@@ -149,32 +149,58 @@ class GameEngine:
         print("Unit had spawned")
 
     def set_building_by_id(self,id,data): #action,id,(player.id,name,x,y)
-        pass
-        """for player in self.players:
-            if player.id == data[0] :
+        string=data[1][2:-1]
+        for player in self.players:
+            if player.netName == data[0] :
                 for building in player.buildings :
                     if building.id == id :
                         return #building aleady exists
-        if data[1] == "TownCenter":
-            this_class=Keep
-        elif data[1] == "House":
-            this_class=House
-        elif data[1] == "Camp":
-            this_class=Camp
-        elif data[1] == "Farm":
-            this_class=Farm
-        elif data[1] == "Barracks":
-            this_class=Barracks
-        elif data[1] == "Stable":
-            this_class=Stable
-        elif data[1] == "ArcheryRange":
-            this_class=ArcheryRange
-        else:
-            print("problèmes lecture classe batiment:",data[1])
-        building_instance = TownCenter(self.players[int(data[0])-1])
-        newbuild = Building.spawn_building(self.players[int(data[0])-1],int(data[2]),int(data[3]),this_class(),self.map)
-        newbuild.id = int(id)
-        print(newbuild.id)"""
+                if string == "TownCenter":
+                    this_class=Keep
+                elif string == "House":
+                    this_class=House
+                elif string == "Camp":
+                    this_class=Camp
+                elif string == "Farm":
+                    this_class=Farm
+                elif string == "Barracks":
+                    this_class=Barracks
+                elif string == "Stable":
+                    this_class=Stable
+                elif string == "ArcheryRange":
+                    this_class=ArcheryRange
+                else:
+                    print("problèmes lecture classe batiment:",string)
+                    return
+                building_instance = TownCenter(self.players[int(data[0])-1])
+                newbuild = Building.spawn_building(self.players[int(data[0])-1],int(data[2]),int(data[3]),this_class,self.map)
+                newbuild.id = int(id)
+                print(newbuild.id)
+
+        for player in self.players:
+            if player.netName is None:
+                player.netName = data[0]
+                if string == "TownCenter":
+                    this_class=Keep
+                elif string == "House":
+                    this_class=House
+                elif string == "Camp":
+                    this_class=Camp
+                elif string == "Farm":
+                    this_class=Farm
+                elif string == "Barracks":
+                    this_class=Barracks
+                elif string == "Stable":
+                    this_class=Stable
+                elif string == "ArcheryRange":
+                    this_class=ArcheryRange
+                else:
+                    print("problèmes lecture classe batiment:",string)
+                    return
+                building_instance = TownCenter(self.players[int(data[0])-1])
+                newbuild = Building.spawn_building(self.players[int(data[0])-1],int(data[2]),int(data[3]),this_class,self.map)
+                newbuild.id = int(id)
+                print(newbuild.id)
 
     def set_resource_by_position(self,id,data): #action,id,(x,y,ressource,amount) ,self.map.grid[y][x] pour avoir la tuile, 
         x,y = int(data[0]),int(data[1])
