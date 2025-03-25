@@ -875,9 +875,8 @@ def start_menu(save_file=None):
         sys.exit()
 
 
-def join_game():
+def join_game(index):
     from Game_Engine import GameEngine
-
     global players,map_size,GameMode
     players.clear()
 
@@ -902,7 +901,8 @@ def join_game():
         sauvegarde=False,
         networkEngine=networkEngine,
         joinNetworkGame=True,
-        networkGame=True
+        networkGame=True,
+        joinIndex=index
     ).run(stdscr))
 
 

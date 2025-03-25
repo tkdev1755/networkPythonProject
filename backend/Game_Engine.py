@@ -39,7 +39,7 @@ from zReseau import *
 
 # GameEngine Class
 class GameEngine:
-    def __init__(self, game_mode, map_size, players, sauvegarde=False,networkEngine=None,networkGame=False, joinNetworkGame=False,messageDecoder=None):
+    def __init__(self, game_mode, map_size, players, sauvegarde=False,networkEngine=None,networkGame=False, joinNetworkGame=False,messageDecoder=None, joinIndex=-1):
         self.game_mode = game_mode
         self.map_size = map_size
         self.players = players
@@ -51,6 +51,7 @@ class GameEngine:
         self.networkGame = networkGame
         self.joinNetworkGame = joinNetworkGame
         self.messageDecoder = messageDecoder
+        self.joinIndex = joinIndex
         # IA related attributes
         # If the player doesn't join another client game on the network, or doesn't play online, initialize the AIs normally
         if not joinNetworkGame:
@@ -59,6 +60,10 @@ class GameEngine:
                 self.players[i].ai = self.ias[i]
             self.IA_used = False
         else:
+            print(f"IA from join, players are {self.players}")
+            self.ias = [IA(player, player.ai_profile, self.map, time.time()) for player in self.players]  # Instantiate IA for each player
+            for i in range(len(self.players)):
+                self.players[i].ai = self.ias[i]
             self.IA_used = False
             pass
 
@@ -66,7 +71,10 @@ class GameEngine:
         if not sauvegarde and not joinNetworkGame:
             Building.place_starting_buildings(self.map)   # Place starting town centers on the map
             Unit.place_starting_units(self.players, self.map)  # Place starting units on the map
-        
+        elif joinNetworkGame and joinIndex != -1:
+            print("Overriding building placement")
+            Building.place_starting_buildings(self.map, override=self.joinIndex)
+            Unit.place_starting_units(self.players, self.map)  # Place starting units on the map
         self.debug_print = debug_print
         self.current_time = time.time()
 
@@ -216,6 +224,7 @@ class GameEngine:
                 player.population += 1
                 self.map.place_unit(int(pos[0]), int(pos[1]), unit)
                 return unit
+
     def initDummyPlayers(self):
         for i in range(3):
             pl = Player(f"Dumb Player {i+2}", "Leans", "Aggressive", i+2)
@@ -327,7 +336,6 @@ class GameEngine:
                         self.debug_print("Game resumed.")
 
                 elif key == ord('n'):
-                    if not self.joinNetworkGame:
                         self.IA_used = not self.IA_used
                         self.debug_print(f"IA used: {self.IA_used}")
 
@@ -347,14 +355,16 @@ class GameEngine:
                 #check for any messages received
                 #message = create_message("SetUnit",3,(32,32,2))
                 #self.interpret_message(message)
-                '''
+            
                 try:
                     data, addr = self.networkEngine.socket.recvfrom(1024)
                     print("received message: %s" % data)
                     self.messageDecoder.interpret_message(data.decode('utf-8'))
                 except BlockingIOError:
                     pass
-                '''
+                except Exception as e:
+                    print("Exception lors de la réception d'une data ! : ",e)
+                    raise Exception("Problems")
 
                 #call the AI if the player didn't join another client game on the network
                 if not self.joinNetworkGame:
@@ -363,13 +373,14 @@ class GameEngine:
                             ia.current_time_called = self.get_current_time()  # Update the current time for each IA
                             ia.run()  # Run the AI logic for each player
                 else:
+                    # Manage the case when the client joined another game on the network
                     if not self.is_paused and self.turn % 200 == 0 and self.IA_used == True: # Call the IA every 5 turns: change 0, 5, 10, 15, ... depending on lag
                         ia = self.ias[0]
                         ia.current_time_called = self.get_current_time()  # Update the current time for each IA
                         ia.run()
                         if ia.noActionsToDo:
                             randomTile = (random.randint(0,self.map_size[0]), random.randint(0,self.map_size[1]))
-                            self.debug_print("AI Has nothing to do so we need to ask for a random tile on the map")
+                            self.debug_print(f"AI Has nothing to do so we need to ask for a random tile on the map, position is {randomTile}")
                             #self.networkEngine.askForProperty(randomTile)
 
 

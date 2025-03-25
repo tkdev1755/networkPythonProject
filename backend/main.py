@@ -36,7 +36,13 @@ if norj =='n' :
 else :
     project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
     sys.path.append(project_root)
+    numberOfPlayers = input("Combien de joueurs ? ")
+    if (int(numberOfPlayers) > 4 and int(numberOfPlayers) < 2):
+        print("Veuillez entrer un nombre entre 2 et 4")
+        sys.exit()
+
+
     from backend.Starter_File import join_game
-    join_game()
+    join_game(numberOfPlayers)
     
 
