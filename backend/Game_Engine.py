@@ -357,14 +357,16 @@ class GameEngine:
                 #self.interpret_message(message)
             
                 try:
-                    data, addr = self.networkEngine.socket.recvfrom(1024)
+                    data= self.networkEngine.recvMessage()
                     print("received message: %s" % data)
                     self.messageDecoder.interpret_message(data.decode('utf-8'))
                 except BlockingIOError:
                     pass
-                except Exception as e:
+                except ConnectionResetError:
+                    pass
+                """ except Exception as e:
                     print("Exception lors de la réception d'une data ! : ",e)
-                    raise Exception("Problems")
+                    raise Exception("Problems")"""
 
                 #call the AI if the player didn't join another client game on the network
                 if not self.joinNetworkGame:

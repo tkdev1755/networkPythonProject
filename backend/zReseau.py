@@ -55,8 +55,8 @@ class MessageDecoder:
         elif action=="SetResource":
             self.gameEngine.set_resource_by_position(int(id),MessageDecoder.ptuple_to_tuple(data))
         elif action=="AskSize":
-            pass
             #self.gameEngine.send_world_size()
+            pass
         else:
             print("Action inconnue pour le moment:",action)
 
@@ -109,6 +109,9 @@ class NetworkEngine:
             return data
         except BlockingIOError as e:
             raise BlockingIOError
+        except ConnectionResetError as e:
+            print("ERREUR CONNEXION")
+            raise e
 
     def send_message(self,message):
         try:
@@ -152,22 +155,20 @@ class NetworkEngine:
     def send_size (self,size):
         self.send_message(f"SizeIS;{self.name};{size}")
     
-    def wait_size (self,t):
-        now = time.time()
-        while now - t < 10 :
-            try:
-                data, addr = self.socket.recvfrom(1024)
-                print("received message: %s" % data)
-                message = message.decode('utf-8')
-                action, id, data = message.split(";")
-                if action == "SendSize":
-                    return MessageDecoder.ptuple_to_tuple(data)
-
-
-            except BlockingIOError:
-                pass
+    def wait_size (self):
         
-        sys.exit()
+        try:
+            data, addr = self.socket.recvfrom(1024)
+            print("received message: %s" % data)
+            message = message.decode('utf-8')
+            action, id, data = message.split(";")
+            if action == "SendSize":
+                return MessageDecoder.ptuple_to_tuple(data)
+
+
+        except BlockingIOError:
+            pass
+        
 
 if __name__ == "__main__":
     print(tuple("(30.5,30.5)".split(",")))
