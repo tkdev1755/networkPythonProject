@@ -16,6 +16,7 @@ class Player:
         self.max_population = 200
         self.training_units = []
         self.id = player_id  # Add this line to store the player's ID
+        self.netName = None
         if self.civilization == "Means":
             self.owned_resources = self.Means_starting_resources
         elif self.civilization == "Leans":
@@ -25,6 +26,9 @@ class Player:
         
     def __str__(self):
         return f"{self.name} ({self.civilization}) {self.units}"
+
+    def setNetName(self,netName):
+        self.netName = netName
 
     def take_turn(self, game_map):
         self.ai_profile.make_decision(self, game_map)
