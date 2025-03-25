@@ -6,7 +6,7 @@
 #define SERVERPORT 8000
 #define MAXLINE 2048
 #define LOCALHOSTIP "127.0.0.1"
-#define INTERFACE_NAME "eth0"
+#define INTERFACE_NAME "Wi-Fi"
 
 // Détection du système d'exploitation
 #if defined(_WIN32) || defined(_WIN64) || defined(WIN32)

@@ -112,7 +112,7 @@ int main() {
             #endif
 
 
-
+            printf("It is from %s\n", inet_ntoa(client_sa.sin_addr));
             if(strncmp(inet_ntoa(client_sa.sin_addr), ip, strlen(inet_ntoa(client_sa.sin_addr))) != 0){
                 if(strncmp(inet_ntoa(client_sa.sin_addr), LOCALHOSTIP, strlen(inet_ntoa(client_sa.sin_addr))) != 0){
                     //it isn't from localhost
@@ -143,7 +143,7 @@ int main() {
             // Vérifie si un événement est survenu sur le descripteur tolocalhostfd
         if (FD_ISSET(tolocalhostfd, &readfds)) {
             printf("Activity detected on tolocalhostfd\n");
-
+            printf("It is from %s\n", inet_ntoa(client_sa.sin_addr));
             #ifdef _WIN32
             bytes_recu = recvfrom(tolocalhostfd, received_msg, BUFFER_SIZE - 1, 0, (struct sockaddr *) &client_sa, (int *) &len);
             if (bytes_recu == SOCKET_ERROR) {
