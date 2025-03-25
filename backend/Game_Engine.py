@@ -140,13 +140,15 @@ class GameEngine:
                     if unit.id == id :
                         unit.position = pos
                         return
-
         #newguy =Unit.spawn_unit(Villager,int(float(pos[0])),int(float(pos[1])),self.players[int(data[2])-1],self.map)
         #newguy.id = int(id)
         #print(newguy.id)
         newguy = self.custom_spawn(pos, data[2])
-        newguy.id = int(id)
-        print("Unit had spawned")
+        if newguy:
+            newguy.id = int(id)
+            print("Unit had spawned")
+        else:
+            print("SPAWN PROBLEM: NEWGUY IS NONE")
 
     def set_building_by_id(self,id,data): #action,id,(player.id,name,x,y)
         string=data[1][2:-1]
