@@ -176,17 +176,21 @@ class GameEngine:
     def set_resource_by_position(self,id,data): #action,id,(x,y,ressource,amount) ,self.map.grid[y][x] pour avoir la tuile, 
         x,y = int(data[0]),int(data[1])
         amount = data[3]
+        print("Set ressource")
         if data[2] == "None":
             self.map.grid[y][x].resource = None
         elif data[2] == "Wood":
             self.map.grid[y][x].resource = Wood()
             self.map.grid[y][x].resource.amount = amount
+            self.map.resources["Wood"].append((x,y))
         elif data[2] == "Gold":
             self.map.grid[y][x].resource = Gold()
             self.map.grid[y][x].resource.amount = amount
+            self.map.resources["Gold"].append((x,y))
         elif data[2] == "Food":
             self.map.grid[y][x].resource = Food()
             self.map.grid[y][x].resource.amount = amount
+            self.map.resources["Food"].append((x,y))
         else:
             print("set_resource problème lecture data:",data[2])
 
