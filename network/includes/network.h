@@ -75,7 +75,7 @@ static void cleanupWinsock() {
 
 int udpserver(struct sockaddr_in * server_sa, int port, char * ip);
 // int udpclient(struct sockaddr_in * server_sa, int port, char * ip);
-void getip(const char * interface_name, char * ip);
+char* getip(const char * interface_name, char * ip);
 int broadcast_sending(int udpserverfd, char * message, int len);
 
 

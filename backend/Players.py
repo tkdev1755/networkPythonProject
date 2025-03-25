@@ -25,11 +25,13 @@ class Player:
             self.owned_resources = self.Marines_starting_resources
         
     def __str__(self):
-        return f"{self.name} ({self.civilization}) {self.units}"
+        return f"{self.name} | NetName : {self.netName} | ({self.civilization}) "
 
     def setNetName(self,netName):
         self.netName = netName
 
+    def getNetName(self):
+        return self.netName
     def take_turn(self, game_map):
         self.ai_profile.make_decision(self, game_map)
 

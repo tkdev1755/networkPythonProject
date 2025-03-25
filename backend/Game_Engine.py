@@ -132,10 +132,13 @@ class GameEngine:
 
 
     def move_by_id(self,id,data): #juste, remplace la position de l'unité d'id id par position 
+        self.debug_print(f"--------- [MBID START] -------")
         pos = (float(data[0]),float(data[1]))
+        netName = data[2][2:-1]
         for player in self.players:
-            print(player.units)
-            if player.netName == data[2] :
+            self.debug_print(f"[MBID] Player : {player.getNetName()}")
+            if player.netName == netName :
+                #self.debug_print(f"[MBID] Known player going by {netName} id")
                 for unit in player.units :
                     if unit.id == id :
                         unit.position = pos
@@ -143,20 +146,26 @@ class GameEngine:
         #newguy =Unit.spawn_unit(Villager,int(float(pos[0])),int(float(pos[1])),self.players[int(data[2])-1],self.map)
         #newguy.id = int(id)
         #print(newguy.id)
-        newguy = self.custom_spawn(pos, data[2])
+        newguy = self.custom_spawn(pos, netName)
         if newguy:
             newguy.id = int(id)
             print("Unit had spawned")
         else:
             print("SPAWN PROBLEM: NEWGUY IS NONE")
-
-    def set_building_by_id(self,id,data): #action,id,(player.id,name,x,y)
+        self.debug_print(f"--------- [MBID END] -------")
+    def set_building_by_id(self,elementID,data): #action,id,(player.id,name,x,y)
+        self.debug_print(f"--------- [SBID START] -------")
         string=data[1][2:-1]
+        netName = data[0][1:-1]
+        #self.debug_print(f"[SBID] Net name is ! {netName}")
         for player in self.players:
-            if player.netName == data[0] :
+            self.debug_print(f"[SBID] Player : {player.getNetName()} | Condition : {player.getNetName() == netName}")
+            if player.netName == str(netName) :
+                #self.debug_print("[SBID] Player already exists, checking if the building exists")
                 for building in player.buildings :
-                    if building.id == id :
+                    if building.id == elementID :
                         return #building aleady exists
+                self.debug_print("New building to spawn")
                 if string == "TownCenter":
                     this_class=Keep
                 elif string == "House":
@@ -175,13 +184,14 @@ class GameEngine:
                     print("problèmes lecture classe batiment:",string)
                     return
                 newbuild = Building.spawn_building(player,int(data[2]),int(data[3]),this_class,self.map)
-                newbuild = Building.spawn_building(player,int(data[2]),int(data[3]),this_class,self.map)
-                newbuild.id = int(id)
+                newbuild.id = int(elementID)
                 print(newbuild.id)
+                return
 
         for player in self.players:
             if player.netName is None:
-                player.netName = data[0]
+                self.debug_print(f"[SBID] New player going by the name of {netName} ! Registering it")
+                player.netName = netName
                 if string == "TownCenter":
                     this_class=Keep
                 elif string == "House":
@@ -201,8 +211,10 @@ class GameEngine:
                     return
                 newbuild = Building.spawn_building(player,int(data[2]),int(data[3]),this_class,self.map)
                 newbuild = Building.spawn_building(player,int(data[2]),int(data[3]),this_class,self.map)
-                newbuild.id = int(id)
+                newbuild.id = int(elementID)
                 print(newbuild.id)
+                return
+        self.debug_print(f"--------- [SBID END] -------")
 
     def set_resource_by_position(self,id,data): #action,id,(x,y,ressource,amount) ,self.map.grid[y][x] pour avoir la tuile, 
         x,y = int(data[0]),int(data[1])
@@ -236,6 +248,7 @@ class GameEngine:
         #print(self.players)
         for player in self.players :
             if player.netName == name:
+                #self.debug_print(f"[CUSTOMSPAWN] Known player going by {name} id")
                 unit = Villager(player,(pos[0],pos[1]))
                 player.units.append(unit)
                 unit.position = (pos[0],pos[1])
@@ -245,7 +258,9 @@ class GameEngine:
                 return unit
         for player in self.players:
             if player.netName is None:
+                self.debug_print(f"New player going by {name} id, registering it")
                 player.netName = name
+                player.name = f"Player {name}"
                 unit = Villager(player, (pos[0], pos[1]))
                 player.units.append(unit)
                 unit.position = (pos[0], pos[1])

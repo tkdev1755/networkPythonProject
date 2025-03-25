@@ -151,7 +151,7 @@ class IA:
         # Handle remaining military strategy
         if inactive_troops:
             pass
-            #self.attack(list(set(inactive_troops)))
+            #self.attack(list(set(inactive_troops)))'''
         self.debug_print(f"Actions that the AI is able to do ({trainUnitPossible},{gatherPossible},{buildStructuresPossible})")
         self.noActionsToDo = True if trainUnitPossible == -1 and gatherPossible == -1 and buildStructuresPossible == -1 else False
 

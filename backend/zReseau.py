@@ -96,6 +96,7 @@ class NetworkEngine:
 
     def create_socket(self):
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.socket.bind(("127.0.0.1", 5006))
         self.socket.setblocking(False)  # socket non bloquante
 
@@ -158,11 +159,10 @@ class NetworkEngine:
         self.send_message(f"SizeIS;{self.name};{size}")
     
     def wait_size (self):
-        
         try:
             data, addr = self.socket.recvfrom(1024)
             print("received message: %s" % data)
-            message = message.decode('utf-8')
+            message = data.decode('utf-8')
             action, id, data = message.split(";")
             if action == "SendSize":
                 return MessageDecoder.ptuple_to_tuple(data)
