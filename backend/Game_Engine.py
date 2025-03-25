@@ -433,10 +433,14 @@ class GameEngine:
                             for building in player.buildings:
                                 #envoie le building pendant dix tours à la fabrication
                                 if building.sent_count and building.name!="Construct": #action,id,(player.id,name,x,y)
-                                    message= MessageDecoder.create_message("SetBuilding", building.id, (building.player.id,building.name,building.position[0],building.position[1]))
+                                    message= MessageDecoder.create_message("SetBuilding", building.id, (building.player.netName,building.name,building.position[0],building.position[1]))
                                     self.networkEngine.send_message(message)
                                     building.sent_count -= 1
                                     print(message)
+                                elif building.name!="Construct": #Renvoie le batiment tous les cents tours 
+                                    building.sent_count-=1
+                                    if building.sent_count<-100:
+                                        building.sent_count = 5
 
                                 if hasattr(building, 'training_queue') and building.training_queue != []:
                                     unit = building.training_queue[0]
