@@ -59,6 +59,7 @@ class GameEngine:
                 self.players[i].ai = self.ias[i]
             self.IA_used = False
         else:
+            self.IA_used = False
             pass
 
         # Sauvegarde related attributes
@@ -169,23 +170,25 @@ class GameEngine:
     def set_resource_by_position(self,id,data): #action,id,(x,y,ressource,amount) ,self.map.grid[y][x] pour avoir la tuile, 
         x,y = int(data[0]),int(data[1])
         amount = data[3]
-        print("Set ressource")
-        if data[2] == "None":
+        string = data[2][2:-1]
+        if string == 'None':
             self.map.grid[y][x].resource = None
-        elif data[2] == "Wood":
+        elif string == 'Wood':
             self.map.grid[y][x].resource = Wood()
+            self.map.grid[y][x].resource.type = "Wood"
             self.map.grid[y][x].resource.amount = amount
             self.map.resources["Wood"].append((x,y))
-        elif data[2] == "Gold":
+        elif string == 'Gold':
             self.map.grid[y][x].resource = Gold()
+            self.map.grid[y][x].resource.type = "Gold"
             self.map.grid[y][x].resource.amount = amount
             self.map.resources["Gold"].append((x,y))
-        elif data[2] == "Food":
+        elif string == 'Food':
             self.map.grid[y][x].resource = Food()
             self.map.grid[y][x].resource.amount = amount
             self.map.resources["Food"].append((x,y))
         else:
-            print("set_resource problème lecture data:",data[2])
+            print("set_resource problème lecture data:",string)
 
     def send_world_size(self):
         #message = MessageDecoder.create_message("SendSize",0,(self.map.width,self.map.height))
@@ -418,14 +421,14 @@ class GameEngine:
                                 if hasattr(building, 'training_queue') and building.training_queue != []:
                                     unit = building.training_queue[0]
                                     Unit.train_unit(unit, unit.spawn_position[0], unit.spawn_position[1], player, unit.spawn_building, self.map, self.get_current_time())
-                                elif type(building).__name__ == "Keep":
+                                """elif type(building).__name__ == "Keep":
                                     nearby_enemies = IA.find_nearby_enemies(building.player.ai, max_distance=building.range, unit_position=building.position)  # 5 tile radius
                                     if nearby_enemies:
                                         closest_enemy = min(nearby_enemies,
                                             key=lambda e: IA.calculate_distance(building.player.ai, pos1=unit.position, pos2=e.position))
                                         action.attack_target(building, target=closest_enemy, current_time_called=self.current_time, game_map=self.map)
                                     else:
-                                        building.target = None
+                                        building.target = None"""
 
                 # Clear the screen and display the new part of the map after moving
                 stdscr.clear()

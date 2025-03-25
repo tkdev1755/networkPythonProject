@@ -901,7 +901,7 @@ def join_game():
         players=players,
         sauvegarde=False,
         networkEngine=networkEngine,
-        joinNetworkGame=False,
+        joinNetworkGame=True,
         networkGame=True
     ).run(stdscr))
 
