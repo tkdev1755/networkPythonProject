@@ -56,6 +56,7 @@ class MessageDecoder:
             self.gameEngine.set_resource_by_position(int(id),MessageDecoder.ptuple_to_tuple(data))
         elif action=="AskSize":
             #self.gameEngine.send_world_size()
+            pass
         elif action == "SetUnitHealth":
             self.gameEngine.update_unit_health(int(id), MessageDecoder.ptuple_to_tuple(data))
         else:
