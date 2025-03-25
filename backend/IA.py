@@ -27,6 +27,7 @@ class IA:
         self.entouring_units = []
         self.nb_encircling_attacks = 0
         self.already_encircling_units = []
+        self.noActionsToDo = False
 
 
 #### PRIORITIES and UNIT_RESOURCES ####
@@ -105,12 +106,16 @@ class IA:
 #### MAIN LOOP ####
 
     def run(self):
+        self.debug_print(f"------- RESOURCES ARE {self.player.owned_resources}-----")
         self.adjust_priorities()
         self.manage_defenders()  # New call to manage defenders
         building_villagers, gathering_villagers, inactive_troops = self.get_inactive_units()
 
         trainUnitPossible = self.train_units()
-        
+
+        if trainUnitPossible == -1:
+            self.debug_print("Training unit is not possible at the moment")
+
         if self.recovery_strategy and self.player.owned_resources["Wood"] < 350:
             gathering_villagers.extend(building_villagers)
             building_villagers = []
@@ -121,14 +126,20 @@ class IA:
             gathering_villagers = []
 
         buildStructuresPossible = self.build_structures(list(set(building_villagers)))
-        
+
+        if buildStructuresPossible == -1:
+            self.debug_print("Impossible to build buildings at the moment")
+
         _, remaining_builders, _ = self.get_inactive_units()
         remaining_builders = [v for v in remaining_builders if v not in building_villagers]
         gathering_villagers.extend(remaining_builders)
         
         gathering_villagers = list(set(gathering_villagers))
-        self.gather_resources(gathering_villagers)
-        
+        gatherPossible = self.gather_resources(gathering_villagers)
+
+        if gatherPossible == -1:
+            self.debug_print("Impossible to gather resources at the moment")
+
         # Check for nearby enemies for all units
         for unit in (u for u in self.player.units if u.task != "encircling"):
             nearby_enemies = self.find_nearby_enemies(5, unit.position)  # 5 tile radius
@@ -141,6 +152,9 @@ class IA:
         if inactive_troops:
             pass
             #self.attack(list(set(inactive_troops)))
+        self.debug_print(f"Actions that the AI is able to do ({trainUnitPossible},{gatherPossible},{buildStructuresPossible})")
+        self.noActionsToDo = True if trainUnitPossible == -1 and gatherPossible == -1 and buildStructuresPossible == -1 else False
+
 
 
 #### TRAINING STRATEGY ####
@@ -167,8 +181,8 @@ class IA:
                 sum(building.population_increase for building in self.player.buildings) - self.player.population - len(self.player.training_units)
             )
             for _ in range(free_slots):
-                self.train_troops()
-            return 1
+                trainTroopResult = self.train_troops()
+            return trainTroopResult
         else:
             if (self.player.population + len(self.player.training_units) >= self.player.max_population or 
                     self.player.population + len(self.player.training_units) >= sum(building.population_increase for building in self.player.buildings)):
@@ -182,18 +196,18 @@ class IA:
             desired_military = max(1,int(total_units * self.priorities["military_ratio"]))
             
             if current_villagers < desired_villagers and self.player.owned_resources["Food"] > 50:
-                self.train_villagers()
-                return 1
+                trainVillagerResult = self.train_villagers()
+                return trainVillagerResult
             elif current_military < desired_military and (
                     self.player.owned_resources["Wood"] > 50 and 
                     self.player.owned_resources["Gold"] > 50 and 
                     self.player.owned_resources["Food"] > 100 and 
                     any(type(building).__name__ in ["Barracks", "Stable", "ArcheryRange"] for building in self.player.buildings)):
-                self.train_troops()
-                return 1
+                trainTroopResult = self.train_troops()
+                return trainTroopResult
             elif self.player.owned_resources["Food"] > 50:
-                self.train_villagers()
-                return 1
+                trainVillagerResult = self.train_villagers()
+                return trainVillagerResult
             elif self.player.owned_resources["Food"] < 50:
                 return -1
 
@@ -206,9 +220,9 @@ class IA:
                         new_x = x + dx
                         new_y = y + dy
                         if self.is_position_valid(new_x, new_y, 1, is_building=False):
-                            Unit.train_unit(Villager, new_x, new_y, self.player, building, self.game_map, self.current_time_called)
+                            trainUnitResult = Unit.train_unit(Villager, new_x, new_y, self.player, building, self.game_map, self.current_time_called)
                             #self.debug_print(f"{self.player.name} : Training villager at ({new_x}, {new_y})")
-                            return
+                            return trainUnitResult
 
     def train_troops(self):
         buildings = [building for building in self.player.buildings if type(building).__name__ in ["Barracks", "ArcheryRange", "Stable"]]
@@ -222,9 +236,9 @@ class IA:
                         new_x = x + dx
                         new_y = y + dy
                         if self.is_position_valid(new_x, new_y, 1, is_building=False):
-                            Unit.train_unit(Swordsman, new_x, new_y, self.player, building, self.game_map, self.current_time_called)
+                            trainUnitResult = Unit.train_unit(Swordsman, new_x, new_y, self.player, building, self.game_map, self.current_time_called)
                             #self.debug_print(f"{self.player.name} : Training swordsman at ({new_x}, {new_y})")
-                            return
+                            return trainUnitResult
             elif type(building).__name__ == "ArcheryRange":
                 x, y = building.position
                 for dx in range(-1, 2):
@@ -251,6 +265,7 @@ class IA:
 
     def gather_resources(self, villagers):
         foundResource = False
+        gatherResResult = False
         #if villagers : self.debug_print(f"Farm : {[villager.name for villager in villagers]}")
         for villager in villagers:
             # Determine the resource type that the player has the least of
@@ -259,12 +274,13 @@ class IA:
                 for resource_type in resource_types: # Gather the resource that the player has the least of
                     #self.debug_print(f"{villager.name} : Gathering {resource_type}")
                     if Action(self.game_map).gather_resources(villager, resource_type, self.current_time_called): # Gather the resource
-                        foundResource = False
+                        foundResource = True
                         break
-
             else:
-                gatherResResult = Action(self.game_map).gather_resources(villager, "Wood", self.current_time_called)
-                return -1 if gatherResResult else 1
+                foundResource = Action(self.game_map).gather_resources(villager, "Wood", self.current_time_called)
+
+        return 1 if foundResource else -1
+
 
     def is_position_valid(self, x, y, building_size, is_building=True):
         # Check map boundaries
@@ -298,7 +314,7 @@ class IA:
 
     def build_structures(self, villagers):
         if not villagers:
-            return
+            return -2
         villagers = list(set(villagers))  # Ensure no duplicates
         
         # Check if we should join existing construction (1/3 chance)
@@ -350,7 +366,7 @@ class IA:
                     self.debug_print("Strategy : No Town Center, not enough Wood, building a Camp", 'Magenta')
             else:
                 return -1
-                    
+
         # Check if food is low and prioritize building a Farm
         elif self.player.owned_resources["Food"] < 50 and self.player.owned_resources["Wood"] >= 60:
             least_constructed_building = "Farm"
@@ -457,7 +473,7 @@ class IA:
                         self.nb_keep += 1
                         self.secure_gold[1] += 1
                     self.secure_gold[0] = 0
-
+        return  1
 
 #### ATTACK STRATEGY ####
 

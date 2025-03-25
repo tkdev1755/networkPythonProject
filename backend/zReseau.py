@@ -126,12 +126,12 @@ class NetworkEngine:
 
     # À Voir si on doit céder la propriété immédiatement dès qu'elle est demandée
     # où envoyer un message "yield;id;{data}"
-    def yieldProperty(self,id):
-        if self.isOwner(id):
-            data = ""
+    def yieldProperty(self,elementId,newOwner):
+        if self.isOwner(elementId):
+            data = f"{newOwner}"
             propertyMessage = f"yield;{self.name};{data}" # Peut changer de syntaxe
             self.send_message(propertyMessage)
-            self.updateProperty(id)
+            self.updateProperty(elementId)
 
     def updateProperty(self, id):
 

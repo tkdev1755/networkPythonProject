@@ -59,7 +59,7 @@ class StartMenu:
         # Adjusted button positions for 3 buttons
         self.buttons = [
             {'text': 'Start Game', 'rect': pygame.Rect(300, 250, 200, 50)},
-            {'text': 'Load Game', 'rect': pygame.Rect(300, 320, 200, 50)},
+                {'text': 'Load Game', 'rect': pygame.Rect(300, 320, 200, 50)},
             {'text': 'Exit', 'rect': pygame.Rect(300, 390, 200, 50)}
         ]
         self.font = pygame.font.Font(None, 48)
@@ -890,26 +890,18 @@ def join_game():
     networkEngine.setSocketBlocking(False)
     P1 = Player(
         f'Player 1',
-        'Marines',
+        'Leans',
         'aggressive',
         player_id=1
     )
     players.append(P1)
-    P2 = Player(
-        f'Player 2',
-        'Marines',
-        'aggressive',
-        player_id=2
-    )
-    players.append(P2)
-
     curses.wrapper(lambda stdscr: GameEngine(
         game_mode="Empty",
-        map_size=map_size,
+        map_size=(120,120),
         players=players,
         sauvegarde=False,
         networkEngine=networkEngine,
-        joinNetworkGame=True,
+        joinNetworkGame=False,
         networkGame=True
     ).run(stdscr))
 

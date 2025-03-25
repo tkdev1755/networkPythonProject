@@ -1,4 +1,5 @@
 import curses
+import random
 import time
 import pickle
 import os
@@ -6,6 +7,7 @@ import tkinter as tk
 
 from queue import Queue
 
+from backend.Players import Player
 from frontend.gui import GUI
 
 from logger import debug_print
@@ -31,6 +33,7 @@ from zReseau import *
     24/05/25@tkdev1755 : Changé les appels des fonctions send_message et recvFrom vers des appels de méthodes de la classe NetworkEngine
     24/05/25@tkdev1755 : Changé la manière dont le networkEngine est initialisé
     24/05/25@tkdev1755 : Ajouté un attribut networkGame et joinNetworkGame pour gérer une partie en réseau et activer les fonctionnalités liées à celle-ci
+    25/05/25@tkdev1755 : Ajouté un attribut netName à la classe player
 
 '''
 
@@ -117,32 +120,22 @@ class GameEngine:
         return self.current_time
 
     #fonction pour interpréter un message 
-    '''def interpret_message(self,message,sock):
-        action, id, data=message.split(";")
-        if action=="SetUnit":
-            self.move_by_id(int(id),MessageDecoder.ptuple_to_tuple(data))
-        elif action=="SetBuilding":
-            self.set_building_by_id(int(id),MessageDecoder.ptuple_to_tuple(data))
-        elif action=="SetResource":
-            self.set_resource_by_position(int(id),MessageDecoder.ptuple_to_tuple(data))
-        elif action=="AskSize":
-            self.send_world_size()
-        else:
-            print("Action inconnue pour le moment:",action)'''
+
 
     def move_by_id(self,id,data): #juste, remplace la position de l'unité d'id id par position 
         pos = (float(data[0]),float(data[1]))
         for player in self.players:
             print(player.units)
-            if player.id == int(data[2]) :
+            if player.netName == data[2] :
                 for unit in player.units :
                     if unit.id == id :
                         unit.position = pos
                         return
+
         #newguy =Unit.spawn_unit(Villager,int(float(pos[0])),int(float(pos[1])),self.players[int(data[2])-1],self.map)
         #newguy.id = int(id)
         #print(newguy.id)
-        newguy = self.custom_spawn(pos, int(data[2]))
+        newguy = self.custom_spawn(pos, data[2])
         newguy.id = int(id)
         print("Unit had spawned")
 
@@ -196,11 +189,10 @@ class GameEngine:
         #self.networkEngine.send_size(map_size)
         pass
 
-    def custom_spawn (self,pos,joueur_id):
-        print(self.players)
+    def custom_spawn (self,pos,name):
+        #print(self.players)
         for player in self.players :
-            print(player.id, joueur_id)
-            if player.id == joueur_id:
+            if player.netName == name:
                 unit = Villager(player,(pos[0],pos[1]))
                 player.units.append(unit)
                 unit.position = (pos[0],pos[1])
@@ -208,6 +200,20 @@ class GameEngine:
                 self.map.place_unit(int(pos[0]),int(pos[1]), unit)
                 print("I return unit")
                 return unit
+        for player in self.players:
+            if player.netName is None:
+                player.netName = name
+                unit = Villager(player, (pos[0], pos[1]))
+                player.units.append(unit)
+                unit.position = (pos[0], pos[1])
+                player.population += 1
+                self.map.place_unit(int(pos[0]), int(pos[1]), unit)
+                return unit
+    def initDummyPlayers(self):
+        for i in range(3):
+            pl = Player(f"Dumb Player {i+2}", "Leans", "Aggressive", i+2)
+            self.players.append(pl)
+        pass
 
     def run(self, stdscr):
         # Initialize the starting view position
@@ -217,7 +223,8 @@ class GameEngine:
         #Initialize correctly Networkengine and MessageDecoder to ensure there will be no bug
         self.initNetworkEngine()
         self.initMessageDecoder()
-
+        self.initDummyPlayers()
+        self.players[0].netName = self.networkEngine.name # par définition le player 1 est le joueur local
         stdscr.clear()  # Clear the screen
 
         if self.terminalon :
@@ -350,62 +357,71 @@ class GameEngine:
                         for ia in self.ias:
                             ia.current_time_called = self.get_current_time()  # Update the current time for each IA
                             ia.run()  # Run the AI logic for each player
+                else:
+                    if not self.is_paused and self.turn % 200 == 0 and self.IA_used == True: # Call the IA every 5 turns: change 0, 5, 10, 15, ... depending on lag
+                        ia = self.ias[0]
+                        ia.current_time_called = self.get_current_time()  # Update the current time for each IA
+                        ia.run()
+                        if ia.noActionsToDo:
+                            randomTile = (random.randint(0,self.map_size[0]), random.randint(0,self.map_size[1]))
+                            self.debug_print("AI Has nothing to do so we need to ask for a random tile on the map")
+                            #self.networkEngine.askForProperty(randomTile)
+
 
                 if not self.is_paused and self.turn % 10 == 0:
                     # Move units toward their target position
                     for player in self.players:
-                        for unit in player.units:
-                            if unit.task == "going_to_battle":
-                                action.go_battle(unit, unit.target_attack, self.get_current_time())
-                            elif unit.task == "attacking":
-                                action._attack(unit, unit.target_attack, self.get_current_time())
-                            elif unit.target_position:
-                                target_x, target_y = unit.target_position
-                                action.move_unit(unit, target_x, target_y, self.get_current_time())
-                                #envoyer "Set;ID;Data" pour indiquer le nouvel emplacement
-                                message=MessageDecoder.create_message("SetUnit", unit.id, (unit.position[0],unit.position[1],unit.player.id))
-                                self.networkEngine.send_message(message)
-                                print(message)
+                        if player.netName == self.networkEngine.name:
+                            for unit in player.units:
+                                if unit.task == "going_to_battle":
+                                    action.go_battle(unit, unit.target_attack, self.get_current_time())
+                                elif unit.task == "attacking":
+                                    action._attack(unit, unit.target_attack, self.get_current_time())
+                                elif unit.target_position:
+                                    target_x, target_y = unit.target_position
+                                    action.move_unit(unit, target_x, target_y, self.get_current_time())
+                                    #envoyer "Set;ID;Data" pour indiquer le nouvel emplacement
+                                    message=MessageDecoder.create_message("SetUnit", unit.id, (unit.position[0],unit.position[1],player.netName))
+                                    self.networkEngine.send_message(message)
+                                    print(message)
+                                elif unit.task == "gathering" or unit.task == "returning":
+                                    action._gather(unit, unit.last_gathered, self.get_current_time())
+                                elif unit.task == "marching":
+                                    x,y = unit.target_resource #target_resource est une position, ligne ajoutée par moi
+                                    action.gather_resources(unit, unit.last_gathered, self.get_current_time())
+                                    #envoyer "SetResource;ID;Data" pour indiquer l'état de la ressource, data=(x,y,ressource,amount)
+                                    this_tile = self.map.grid[y][x]
+                                    if this_tile.resource == None:
+                                        message= MessageDecoder.create_message("SetResource",this_tile.id,(x,y,"None",0))
+                                    else:
+                                        message= MessageDecoder.create_message("SetResource",this_tile.id,(x,y,this_tile.resource.type,this_tile.resource.amount))
+                                    self.networkEngine.send_message(message) # Remplace le send_message(message, self.networkEngine.socket)
+                                    print(message)
+                                elif unit.task == "is_attacked":
+                                    action._attack(unit, unit.is_attacked_by, self.get_current_time())
+                                elif unit.task == "going_to_construction_site":
+                                    action.construct_building(unit, unit.construction_type, unit.target_building[0], unit.target_building[1], player, self.get_current_time())
+                                elif unit.task == "constructing":
+                                    action._construct(unit, unit.construction_type, unit.target_building[0], unit.target_building[1], player, self.get_current_time())
+                            for building in player.buildings:
+                                #envoie le building pendant dix tours à la création, le renverra de temps en temps
+                                if building.sent_count: #action,id,(player.id,name,x,y)
+                                    message= MessageDecoder.create_message("SetBuilding", building.id, (building.player.id,building.name,building.position[0],building.position[1]))
+                                    self.networkEngine.send_message(message)
+                                    building.sent_count -= 1
+                                    print(message)
 
-
-                            elif unit.task == "gathering" or unit.task == "returning":
-                                action._gather(unit, unit.last_gathered, self.get_current_time())
-                            elif unit.task == "marching":
-                                x,y = unit.target_resource #target_resource est une position, ligne ajoutée par moi
-                                action.gather_resources(unit, unit.last_gathered, self.get_current_time())
-                                #envoyer "SetResource;ID;Data" pour indiquer l'état de la ressource, data=(x,y,ressource,amount)
-                                this_tile = self.map.grid[y][x]
-                                if this_tile.resource == None:
-                                    message= MessageDecoder.create_message("SetResource",this_tile.id,(x,y,"None",0))
-                                else:
-                                    message= MessageDecoder.create_message("SetResource",this_tile.id,(x,y,this_tile.resource.type,this_tile.resource.amount))
-                                self.networkEngine.send_message(message) # Remplace le send_message(message, self.networkEngine.socket)
-                                print(message)
-                            elif unit.task == "is_attacked":
-                                action._attack(unit, unit.is_attacked_by, self.get_current_time())
-                            elif unit.task == "going_to_construction_site":
-                                action.construct_building(unit, unit.construction_type, unit.target_building[0], unit.target_building[1], player, self.get_current_time())
-                            elif unit.task == "constructing":
-                                action._construct(unit, unit.construction_type, unit.target_building[0], unit.target_building[1], player, self.get_current_time())
-                        for building in player.buildings:
-                            #envoie le building pendant dix tours à la création, le renverra de temps en temps
-                            if building.sent_count: #action,id,(player.id,name,x,y)
-                                message= MessageDecoder.create_message("SetBuilding", building.id, (building.player.id,building.name,building.position[0],building.position[1]))
-                                self.networkEngine.send_message(message)
-                                building.sent_count -= 1
-                                print(message)
-
-                            if hasattr(building, 'training_queue') and building.training_queue != []:
-                                unit = building.training_queue[0]
-                                Unit.train_unit(unit, unit.spawn_position[0], unit.spawn_position[1], player, unit.spawn_building, self.map, self.get_current_time())
-                            elif type(building).__name__ == "Keep":
-                                nearby_enemies = IA.find_nearby_enemies(building.player.ai, max_distance=building.range, unit_position=building.position)  # 5 tile radius
-                                if nearby_enemies:
-                                    closest_enemy = min(nearby_enemies, 
-                                        key=lambda e: IA.calculate_distance(building.player.ai, pos1=unit.position, pos2=e.position))
-                                    action.attack_target(building, target=closest_enemy, current_time_called=self.current_time, game_map=self.map)
-                                else: 
-                                    building.target = None
+                                if hasattr(building, 'training_queue') and building.training_queue != []:
+                                    unit = building.training_queue[0]
+                                    Unit.train_unit(unit, unit.spawn_position[0], unit.spawn_position[1], player, unit.spawn_building, self.map, self.get_current_time())
+                                elif type(building).__name__ == "Keep":
+                                    nearby_enemies = IA.find_nearby_enemies(building.player.ai, max_distance=building.range, unit_position=building.position)  # 5 tile radius
+                                    if nearby_enemies:
+                                        closest_enemy = min(nearby_enemies,
+                                            key=lambda e: IA.calculate_distance(building.player.ai, pos1=unit.position, pos2=e.position))
+                                        action.attack_target(building, target=closest_enemy, current_time_called=self.current_time, game_map=self.map)
+                                    else:
+                                        building.target = None
 
                 # Clear the screen and display the new part of the map after moving
                 stdscr.clear()

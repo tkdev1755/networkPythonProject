@@ -124,7 +124,7 @@ class Unit:
         for resource_type, amount in unit_to_train.cost.items():
             if player.owned_resources.get(resource_type, 0) < amount and unit_to_train not in player.training_units:
                 debug_print(f"Not enough {resource_type} to train {unit_to_train}.", 'Yellow')
-                return
+                return -1
         if isinstance(unit_to_train, type):
             if unit_to_train == Horseman:
                 unit_to_train = unit_to_train(player, position=(x, y))
