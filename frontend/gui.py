@@ -1134,6 +1134,27 @@ class GUI(threading.Thread):
         self.screen.blit(self.pre_rendered_map, (0, 0), visible_rect)
 
         entities = []
+        # Collect resources 
+        for tuple in self.game_data.map.resources["Wood"]:
+            iso_x, iso_y = self.cart_to_iso(tuple[0], tuple[1])
+            tile_x = iso_x + (self.game_data.map.height * self.TILE_WIDTH // 2)
+            tile_y = iso_y
+            image = self.IMAGES["Wood"]
+            self.pre_rendered_map.blit(image, (
+                tile_x - (image.get_width() // 2),
+                tile_y - image.get_height() + (self.TILE_HEIGHT // 2)
+            ))
+
+        for tuple in self.game_data.map.resources["Gold"]:
+            iso_x, iso_y = self.cart_to_iso(tuple[0], tuple[1])
+            tile_x = iso_x + (self.game_data.map.height * self.TILE_WIDTH // 2)
+            tile_y = iso_y
+            image = self.IMAGES["Gold"]
+            self.pre_rendered_map.blit(image, (
+                tile_x - (image.get_width() // 2),
+                tile_y - image.get_height() + (self.TILE_HEIGHT // 2)
+            ))
+
 
         for tuple in self.game_data.map.resources["Wood"]:
             iso_x, iso_y = self.cart_to_iso(tuple[0], tuple[1])

@@ -140,19 +140,18 @@ class IA:
         if gatherPossible == -1:
             self.debug_print("Impossible to gather resources at the moment")
 
-        """ # Check for nearby enemies for all units
-            for unit in (u for u in self.player.units if u.task != "encircling"):
-                nearby_enemies = self.find_nearby_enemies(5, unit.position)  # 5 tile radius
-                if nearby_enemies:
-                    closest_enemy = min(nearby_enemies, 
-                        key=lambda e: self.calculate_distance(unit.position, e.position))
-                    Action(self.game_map).go_battle(unit, closest_enemy, self.current_time_called)
-            
-            # Handle remaining military strategy
-            if inactive_troops:
-                pass
-                #self.attack(list(set(inactive_troops)))"""
-    
+        # Check for nearby enemies for all units
+        for unit in (u for u in self.player.units if u.task != "encircling"):
+            nearby_enemies = self.find_nearby_enemies(5, unit.position)  # 5 tile radius
+            if nearby_enemies:
+                closest_enemy = min(nearby_enemies, 
+                    key=lambda e: self.calculate_distance(unit.position, e.position))
+                Action(self.game_map).go_battle(unit, closest_enemy, self.current_time_called)
+        
+        # Handle remaining military strategy
+        if inactive_troops:
+            pass
+            #self.attack(list(set(inactive_troops)))
         self.debug_print(f"Actions that the AI is able to do ({trainUnitPossible},{gatherPossible},{buildStructuresPossible})")
         self.noActionsToDo = True if trainUnitPossible == -1 and gatherPossible == -1 and buildStructuresPossible == -1 else False
 

@@ -141,6 +141,7 @@ class GameEngine:
         print("Unit had spawned")
 
     def set_building_by_id(self,id,data): #action,id,(player.id,name,x,y)
+        pass
         """for player in self.players:
             if player.id == data[0] :
                 for building in player.buildings :
@@ -169,7 +170,7 @@ class GameEngine:
 
     def set_resource_by_position(self,id,data): #action,id,(x,y,ressource,amount) ,self.map.grid[y][x] pour avoir la tuile, 
         x,y = int(data[0]),int(data[1])
-        amount = data[3]
+        amount = float(data[3])
         string = data[2][2:-1]
         if string == 'None':
             self.map.grid[y][x].resource = None
@@ -177,18 +178,17 @@ class GameEngine:
             self.map.grid[y][x].resource = Wood()
             self.map.grid[y][x].resource.type = "Wood"
             self.map.grid[y][x].resource.amount = amount
-            self.map.resources["Wood"].append((x,y))
-        elif string == 'Gold':
+            self.map.resources["Wood"].append((x, y))
+        elif data[2] == "Gold":
             self.map.grid[y][x].resource = Gold()
             self.map.grid[y][x].resource.type = "Gold"
             self.map.grid[y][x].resource.amount = amount
-            self.map.resources["Gold"].append((x,y))
-        elif string == 'Food':
+        elif data[2] == "Food":
             self.map.grid[y][x].resource = Food()
             self.map.grid[y][x].resource.amount = amount
             self.map.resources["Food"].append((x,y))
         else:
-            print("set_resource problème lecture data:",string)
+            print("set_resource problème lecture data:",data[2])
 
     def send_world_size(self):
         #message = MessageDecoder.create_message("SendSize",0,(self.map.width,self.map.height))
@@ -347,16 +347,14 @@ class GameEngine:
                 #check for any messages received
                 #message = create_message("SetUnit",3,(32,32,2))
                 #self.interpret_message(message)
-            
+                '''
                 try:
                     data, addr = self.networkEngine.socket.recvfrom(1024)
                     print("received message: %s" % data)
                     self.messageDecoder.interpret_message(data.decode('utf-8'))
                 except BlockingIOError:
                     pass
-                except Exception as e:
-                    print("Exception lors de la réception d'une data ! : ",e)
-                    raise Exception("Problems")
+                '''
 
                 #call the AI if the player didn't join another client game on the network
                 if not self.joinNetworkGame:
@@ -392,7 +390,16 @@ class GameEngine:
                                     self.networkEngine.send_message(message)
                                     print(message)
                                 elif unit.task == "gathering" or unit.task == "returning":
+                                    x,y = unit.target_resource #target_resource est une position, ligne ajoutée par moi
                                     action._gather(unit, unit.last_gathered, self.get_current_time())
+                                    #envoyer "SetResource;ID;Data" pour indiquer l'état de la ressource, data=(x,y,ressource,amount)
+                                    this_tile = self.map.grid[y][x]
+                                    if this_tile.resource == None:
+                                        message= MessageDecoder.create_message("SetResource",this_tile.id,(x,y,"None",0))
+                                    else:
+                                        message= MessageDecoder.create_message("SetResource",this_tile.id,(x,y,this_tile.resource.type,this_tile.resource.amount))
+                                    self.networkEngine.send_message(message) # Remplace le send_message(message, self.networkEngine.socket)
+                                    print(message)
                                 elif unit.task == "marching":
                                     x,y = unit.target_resource #target_resource est une position, ligne ajoutée par moi
                                     action.gather_resources(unit, unit.last_gathered, self.get_current_time())
