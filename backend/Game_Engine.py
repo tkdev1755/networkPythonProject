@@ -393,11 +393,8 @@ class GameEngine:
                             for unit in player.units:
                                 if unit.task == "going_to_battle":
                                     action.go_battle(unit, unit.target_attack, self.get_current_time())
-                                elif unit.task == "attacking":
-                                    action._attack(unit, unit.target_attack, self.get_current_time())
-                                    message = MessageDecoder.create_message("SetUnitHealth", unit.id, (unit.hp, player.netName))
-                                    self.networkEngine.send_message(message)
-                                    print(message)
+                                #elif unit.task == "attacking":
+                                #    action._attack(unit, unit.target_attack, self.get_current_time())
                                 elif unit.target_position:
                                     target_x, target_y = unit.target_position
                                     action.move_unit(unit, target_x, target_y, self.get_current_time())
@@ -434,8 +431,8 @@ class GameEngine:
                                 elif unit.task == "constructing":
                                     action._construct(unit, unit.construction_type, unit.target_building[0], unit.target_building[1], player, self.get_current_time())
                             for building in player.buildings:
-                                #envoie le building pendant dix tours à la création, le renverra de temps en temps
-                                if building.sent_count: #action,id,(player.id,name,x,y)
+                                #envoie le building pendant dix tours à la fabrication
+                                if building.sent_count and building.name!="Construct": #action,id,(player.id,name,x,y)
                                     message= MessageDecoder.create_message("SetBuilding", building.id, (building.player.id,building.name,building.position[0],building.position[1]))
                                     self.networkEngine.send_message(message)
                                     building.sent_count -= 1
