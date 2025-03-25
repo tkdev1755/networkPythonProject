@@ -20,43 +20,43 @@ void closeAll(int *tab, int number_of_socket) {
     }
 }
 
-int udpclient(struct sockaddr_in *server_sa, int port, char * ip) {
-    #ifdef _WIN32
-    // Initialiser Winsock si pas déjà fait
-    static int winsock_initialized = 0;
-    if (!winsock_initialized) {
-        WSADATA wsaData;
-        if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0) {
-            stop("WSAStartup failed");
-        }
-        winsock_initialized = 1;
-    }
-    SOCKET socketfd = socket(AF_INET, SOCK_DGRAM, 0);
-    if(socketfd == INVALID_SOCKET) {
-        stop("Socket creation failed!");
-    }
-    #else
-    int socketfd = socket(AF_INET, SOCK_DGRAM, 0);
-    if(socketfd < 0) {
-        stop("Socket creation failed!");
-    }
-    #endif
+// int udpclient(struct sockaddr_in *server_sa, int port, char * ip) {
+//     #ifdef _WIN32
+//     // Initialiser Winsock si pas déjà fait
+//     static int winsock_initialized = 0;
+//     if (!winsock_initialized) {
+//         WSADATA wsaData;
+//         if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0) {
+//             stop("WSAStartup failed");
+//         }
+//         winsock_initialized = 1;
+//     }
+//     SOCKET socketfd = socket(AF_INET, SOCK_DGRAM, 0);
+//     if(socketfd == INVALID_SOCKET) {
+//         stop("Socket creation failed!");
+//     }
+//     #else
+//     int socketfd = socket(AF_INET, SOCK_DGRAM, 0);
+//     if(socketfd < 0) {
+//         stop("Socket creation failed!");
+//     }
+//     #endif
 
-    if(ip == NULL) {
-        stop("IP adress is null!");
-    }
+//     if(ip == NULL) {
+//         stop("IP adress is null!");
+//     }
 
-    memset(server_sa, 0, sizeof(struct sockaddr_in));
-    server_sa->sin_family = AF_INET;
-    server_sa->sin_port = htons(port);
-    server_sa->sin_addr.s_addr = inet_addr(ip);
+//     memset(server_sa, 0, sizeof(struct sockaddr_in));
+//     server_sa->sin_family = AF_INET;
+//     server_sa->sin_port = htons(port);
+//     server_sa->sin_addr.s_addr = inet_addr(ip);
 
-    return socketfd;
-}
+//     return socketfd;
+// }
 
 int udpserver(struct sockaddr_in *server_sa, int port, char * ip) {
     #ifdef _WIN32
-    // Initialiser Winsock si pas déjà fait
+    // Initialise Winsock if not done
     static int winsock_initialized = 0;
     if (!winsock_initialized) {
         WSADATA wsaData;
@@ -98,7 +98,7 @@ int udpserver(struct sockaddr_in *server_sa, int port, char * ip) {
 }
 
 #ifdef _WIN64
-// Fonction pour convertir une chaîne char* en wchar_t*
+// Converting char* to wchar_t* used in the getip function
 wchar_t* charToWChar(const char* text) {
     size_t size = strlen(text) + 1;
     wchar_t* wText = malloc(size * sizeof(wchar_t));
@@ -114,47 +114,49 @@ char * getip(const char * interface_name, char * ip) {
     DWORD dwRetVal = 0;
     int interfaceTrouvee = 0;
 
-    // Variables pour stocker les informations des adaptateurs
+    // Adapters informations variables
     PIP_ADAPTER_ADDRESSES pAddresses = NULL;
     PIP_ADAPTER_ADDRESSES pCurrAddresses = NULL;
     PIP_ADAPTER_UNICAST_ADDRESS pUnicast = NULL;
 
-    // Première appel pour obtenir la taille du buffer nécessaire
+    
+    //getting the buffer's size
     GetAdaptersAddresses(AF_INET, GAA_FLAG_INCLUDE_PREFIX, NULL, NULL, &ulOutBufLen);
 
-    // Allouer le buffer avec la taille obtenue
+    // allocationg memory for the buffer with the obtained size
     pAddresses = (IP_ADAPTER_ADDRESSES*) malloc(ulOutBufLen);
     if (pAddresses == NULL) {
-        printf("Erreur d'allocation de mémoire.\n");
+        printf("Memory allocation failed in getip !\n");
+        ip = NULL;
         return NULL;
     }
 
-    // Obtenir les informations des adaptateurs
+    // gathering adapters information
     dwRetVal = GetAdaptersAddresses(AF_INET, GAA_FLAG_INCLUDE_PREFIX, NULL, pAddresses, &ulOutBufLen);
 
     if (dwRetVal == NO_ERROR) {
-        // Parcourir la liste des adaptateurs
+        // browsing all adapters
         pCurrAddresses = pAddresses;
         while (pCurrAddresses) {
-            // Comparer le nom de l'interface avec celui recherché
+            // Comparing interface name and the given interface name
             if (wcscmp(pCurrAddresses->FriendlyName, wInterfaceName) == 0) {
                 interfaceTrouvee = 1;
                 printf("\nInformations pour l'interface: %ls\n", pCurrAddresses->FriendlyName);
-                // Obtenir les adresses unicast pour cet adaptateur
+                // getting unicast addresses for this adapter
                 pUnicast = pCurrAddresses->FirstUnicastAddress;
                 if (pUnicast == NULL) {
                     printf("Aucune adresse IP trouvée pour cette interface.\n");
+                    ip = NULL;
                 }
 
                 while (pUnicast != NULL) {
-                    // Obtenir l'adresse IP
+                    // getting the IP address
                     ip[INET_ADDRSTRLEN];
                     struct sockaddr_in* sockaddr = (struct sockaddr_in*)pUnicast->Address.lpSockaddr;
                     inet_ntop(AF_INET, &(sockaddr->sin_addr), ip, INET_ADDRSTRLEN);
                     pUnicast = pUnicast->Next;
                 }
 
-                // Une fois trouvée, on peut sortir de la boucle
                 break;
             }
 
@@ -163,18 +165,19 @@ char * getip(const char * interface_name, char * ip) {
 
         if (!interfaceTrouvee) {
             printf("Interface '%ls' non trouvée.\n", interface_name);
+            ip = NULL;
         }
     } else {
         printf("Erreur lors de l'appel à GetAdaptersAddresses: %d\n", dwRetVal);
+        ip = NULL;
     }
 
-    // Libérer la mémoire
     if (pAddresses) {
         free(pAddresses);
     }
 
     #else
-    // Implémentation Linux originale
+    // For Linux
     struct ifaddrs *ifaddr, *ifa;
 
     // gathering @ip
@@ -220,8 +223,7 @@ void catch(void) {
 }
 
 int broadcast_sending(int udpserverfd, char * message, int len) {
-    // this code is written by Christian Toinard : christian.toinard(at)insa-cvl.fr
-    // #define Message "Bonjour de Christian Toinard"
+    // A part of this code is written by Christian Toinard : christian.toinard(at)insa-cvl.fr
 
     #ifdef _WIN32
     signal(SIGINT, (void (__cdecl *)(int))catch);
@@ -229,9 +231,9 @@ int broadcast_sending(int udpserverfd, char * message, int len) {
     typedef void (*sighandler_t)(int);
     signal(SIGINT, (sighandler_t)catch);
     #endif
-
+    //windows code
     #ifdef _WIN32
-    // Implémentation Windows du broadcast
+    // Windows broadcasting
     BOOL bOptVal = TRUE;
     int bOptLen = sizeof(BOOL);
 
@@ -280,7 +282,7 @@ int broadcast_sending(int udpserverfd, char * message, int len) {
     free(pIPAddrTable);
 
     #else
-    // Implémentation Linux originale
+    // Linux code
     char buffer[BUFFER_SIZE];
     struct ifconf ifc;
     ifc.ifc_len = sizeof(buffer);

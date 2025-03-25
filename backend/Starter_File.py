@@ -3,7 +3,6 @@ import pygame
 import sys
 import curses
 import os
-import time
 from Players import *
 from zReseau import *
 
@@ -839,7 +838,7 @@ def start_menu(save_file=None):
                         player_id=player_id
                     )
                     players.append(new_player)
-
+                
                 # Close pygame before starting curses
                 pygame.quit()
                 # Start the game with updated players list
@@ -932,40 +931,3 @@ def start_game(stdscr, save_file=None):
         )
 
     game_engine.run(stdscr)
-
-
-
-def start_mod_game ():
-    from Mod_Game_Engine import Mod_GameEngine
-    players.clear()
-
-    networkEngine = NetworkEngine()
-    networkEngine.create_socket()
-    #networkengine.ask_size()
-    #now = time.time
-    #size = networkengine.wait_size(now)
-    # sock.setblocking(0) - remplacé par la ligne ci dessous, pour diminuer les modifications des attribts de la classe directement pour éviter les bugs
-    networkEngine.setSocketBlocking(False)
-    
-    P1 = Player(
-                f'Player 1',
-                'Marines',
-                'aggressive',
-                player_id=1
-                    )
-    players.append(P1)
-    P2 = Player(
-                f'Player 2',
-                'Marines',
-                'aggressive',
-                player_id=2
-                    )
-    players.append(P2)
-
-    curses.wrapper(lambda stdscr: Mod_GameEngine(
-                game_mode="Empty",
-                map_size=map_size,
-                players=players,
-                sauvegarde=False,
-                networkEngine=networkEngine
-            ).run(stdscr))

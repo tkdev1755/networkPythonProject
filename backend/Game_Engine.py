@@ -395,6 +395,9 @@ class GameEngine:
                                     action.go_battle(unit, unit.target_attack, self.get_current_time())
                                 elif unit.task == "attacking":
                                     action._attack(unit, unit.target_attack, self.get_current_time())
+                                    message = MessageDecoder.create_message("SetUnitHealth", unit.id, (unit.hp, player.netName))
+                                    self.networkEngine.send_message(message)
+                                    print(message)
                                 elif unit.target_position:
                                     target_x, target_y = unit.target_position
                                     action.move_unit(unit, target_x, target_y, self.get_current_time())
@@ -554,3 +557,13 @@ class GameEngine:
             self.debug_print(f"Game loaded from {filename}.")
         except Exception as e:
             self.debug_print(f"Error loading game: {e}")
+            
+    def update_unit_health(self, uid, data):
+        """command like : "SetUnitHealth;ID;Data" and Data = (health,player.netName)"""
+        for player in self.players:
+            # print(player.units)
+            if player.netName == data[1] :
+                for unit in player.units :
+                    if unit.id == uid :
+                        unit.position = data[0]
+                        return
