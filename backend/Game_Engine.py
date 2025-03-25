@@ -5,6 +5,7 @@ import os
 import tkinter as tk
 
 from queue import Queue
+
 from frontend.gui import GUI
 
 from logger import debug_print
@@ -35,7 +36,7 @@ from zReseau import *
 
 # GameEngine Class
 class GameEngine:
-    def __init__(self, game_mode, map_size, players, sauvegarde=False,networkEngine=None,networkGame=False, joinNetworkGame=False):
+    def __init__(self, game_mode, map_size, players, sauvegarde=False,networkEngine=None,networkGame=False, joinNetworkGame=False,messageDecoder=None):
         self.game_mode = game_mode
         self.map_size = map_size
         self.players = players
@@ -46,7 +47,7 @@ class GameEngine:
         self.networkEngine = networkEngine
         self.networkGame = networkGame
         self.joinNetworkGame = joinNetworkGame
-
+        self.messageDecoder = messageDecoder
         # IA related attributes
         # If the player doesn't join another client game on the network, or doesn't play online, initialize the AIs normally
         if not joinNetworkGame:
@@ -56,8 +57,6 @@ class GameEngine:
             self.IA_used = False
         else:
             pass
-
-
 
         # Sauvegarde related attributes
         if not sauvegarde and not joinNetworkGame:
@@ -73,6 +72,23 @@ class GameEngine:
         self.gui_running = False
         self.data_queue = Queue()
         self.gui_thread = None
+
+    def initMessageDecoder(self):
+        if self.networkEngine is None:
+            self.debug_print("[initMessageDecoder]--- Waiting for networkEngine to be initialized ")
+        else:
+            self.messageDecoder = MessageDecoder(self, self.networkEngine)
+
+    def initNetworkEngine(self):
+        if self.networkEngine is None:
+            self.networkEngine = NetworkEngine()
+            self.networkEngine.create_socket()
+            self.networkEngine.gameEngine = self
+        elif self.networkEngine.socket is None:
+            self.networkEngine.create_socket()
+            self.networkEngine.gameEngine = self
+        else:
+            self.networkEngine.gameEngine = self
 
     def start_gui_thread(self):
         """Initialize and start the GUI thread"""
@@ -101,18 +117,18 @@ class GameEngine:
         return self.current_time
 
     #fonction pour interpréter un message 
-    def interpret_message(self,message,sock):
+    '''def interpret_message(self,message,sock):
         action, id, data=message.split(";")
         if action=="SetUnit":
-            self.move_by_id(int(id),ptuple_to_tuple(data))
+            self.move_by_id(int(id),MessageDecoder.ptuple_to_tuple(data))
         elif action=="SetBuilding":
-            self.set_building_by_id(int(id),ptuple_to_tuple(data))
+            self.set_building_by_id(int(id),MessageDecoder.ptuple_to_tuple(data))
         elif action=="SetResource":
-            self.set_resource_by_position(int(id),ptuple_to_tuple(data))
+            self.set_resource_by_position(int(id),MessageDecoder.ptuple_to_tuple(data))
         elif action=="AskSize":
             self.send_world_size()
         else:
-            print("Action inconnue pour le moment:",action)
+            print("Action inconnue pour le moment:",action)'''
 
     def move_by_id(self,id,data): #juste, remplace la position de l'unité d'id id par position 
         pos = (float(data[0]),float(data[1]))
@@ -175,8 +191,10 @@ class GameEngine:
             print("set_resource problème lecture data:",data[2])
 
     def send_world_size(self):
-        message = create_message("SendSize",0,(self.map.width,self.map.height))
-        self.networkEngine.send_message(message)
+        #message = MessageDecoder.create_message("SendSize",0,(self.map.width,self.map.height))
+        # Ligne ci-dessus non nécessaire -> Une méthode existe déjà dans le NetworkEngine pour envoyer la taille
+        #self.networkEngine.send_size(map_size)
+        pass
 
     def custom_spawn (self,pos,joueur_id):
         print(self.players)
@@ -196,9 +214,12 @@ class GameEngine:
         top_left_x, top_left_y = 0, 0
         viewport_width, viewport_height = 30, 30
         # Display the initial viewport
-        self.networkEngine.gameEngine = self
+        #Initialize correctly Networkengine and MessageDecoder to ensure there will be no bug
+        self.initNetworkEngine()
+        self.initMessageDecoder()
+
         stdscr.clear()  # Clear the screen
-        
+
         if self.terminalon :
             self.map.display_viewport(stdscr, top_left_x, top_left_y, viewport_width, viewport_height, Map_is_paused=self.is_paused)  # Display the initial viewport
 
@@ -316,7 +337,7 @@ class GameEngine:
                 try:
                     data, addr = self.networkEngine.socket.recvfrom(1024)
                     print("received message: %s" % data)
-                    self.interpret_message(data.decode('utf-8'),self.networkEngine.socket)
+                    self.messageDecoder.interpret_message(data.decode('utf-8'))
                 except BlockingIOError:
                     pass
                 except Exception as e:
@@ -342,7 +363,7 @@ class GameEngine:
                                 target_x, target_y = unit.target_position
                                 action.move_unit(unit, target_x, target_y, self.get_current_time())
                                 #envoyer "Set;ID;Data" pour indiquer le nouvel emplacement
-                                message=create_message("SetUnit", unit.id, (unit.position[0],unit.position[1],unit.player.id))
+                                message=MessageDecoder.create_message("SetUnit", unit.id, (unit.position[0],unit.position[1],unit.player.id))
                                 self.networkEngine.send_message(message)
                                 print(message)
 
@@ -355,9 +376,9 @@ class GameEngine:
                                 #envoyer "SetResource;ID;Data" pour indiquer l'état de la ressource, data=(x,y,ressource,amount)
                                 this_tile = self.map.grid[y][x]
                                 if this_tile.resource == None:
-                                    message=create_message("SetResource",this_tile.id,(x,y,"None",0))
+                                    message= MessageDecoder.create_message("SetResource",this_tile.id,(x,y,"None",0))
                                 else:
-                                    message=create_message("SetResource",this_tile.id,(x,y,this_tile.resource.type,this_tile.resource.amount))
+                                    message= MessageDecoder.create_message("SetResource",this_tile.id,(x,y,this_tile.resource.type,this_tile.resource.amount))
                                 self.networkEngine.send_message(message) # Remplace le send_message(message, self.networkEngine.socket)
                                 print(message)
                             elif unit.task == "is_attacked":
@@ -369,7 +390,7 @@ class GameEngine:
                         for building in player.buildings:
                             #envoie le building pendant dix tours à la création, le renverra de temps en temps
                             if building.sent_count: #action,id,(player.id,name,x,y)
-                                message=create_message("SetBuilding", building.id, (building.player.id,building.name,building.position[0],building.position[1]))
+                                message= MessageDecoder.create_message("SetBuilding", building.id, (building.player.id,building.name,building.position[0],building.position[1]))
                                 self.networkEngine.send_message(message)
                                 building.sent_count -= 1
                                 print(message)

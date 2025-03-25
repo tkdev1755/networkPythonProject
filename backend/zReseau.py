@@ -6,11 +6,19 @@ import time
 import sys
 import socket
 
+
 #"Set;ID;Data" demande la modification de l'état de l'objet d'id ID
 
+
+'''
+    Log Modifications 
+    25/03/25@tkdev1755 : Déplacé les fonctions decoupe,ptuple_to_tuple vers la classe MessageDecoder
+    25/03/25@tkdev1755 : Déplacé les fonctions interpret_message du GameEngine vers la classe MessageDecoder
+
+'''
 #il faut qu'on s'accorde sur le contenu de Data
 
-def decoupe(string):
+'''def decoupe(string):
     return string.split(";")
 
 def ptuple_to_tuple(ptuple): #passe une string "(a,..,z)" en tuple (a,..,z)
@@ -18,11 +26,39 @@ def ptuple_to_tuple(ptuple): #passe une string "(a,..,z)" en tuple (a,..,z)
 
 #fonction pour créer un message
 def create_message(action, id, data):
-    return str(action)+";"+str(id)+";"+str(data)
+    return str(action)+";"+str(id)+";"+str(data)'''
 
+class MessageDecoder:
 
+    def __init__(self,gameEngine,networkEngine):
+        self.gameEngine = gameEngine
+        self.networkEngine = networkEngine
 
+    @staticmethod
+    def create_message(action, elementId, data):
+        return str(action) + ";" + str(elementId) + ";" + str(data)
 
+    @staticmethod
+    def decoupe(string):
+        return string.split(";")
+
+    @staticmethod
+    def ptuple_to_tuple(ptuple):  # passe une string "(a,..,z)" en tuple (a,..,z)
+        return tuple(map(str, ptuple[1:-1].split(",")))
+
+    def interpret_message(self,message):
+        action, id, data=message.split(";")
+        if action=="SetUnit":
+            self.gameEngine.move_by_id(int(id),MessageDecoder.ptuple_to_tuple(data))
+        elif action=="SetBuilding":
+            self.gameEngine.set_building_by_id(int(id),MessageDecoder.ptuple_to_tuple(data))
+        elif action=="SetResource":
+            self.gameEngine.set_resource_by_position(int(id),MessageDecoder.ptuple_to_tuple(data))
+        elif action=="AskSize":
+            pass
+            #self.gameEngine.send_world_size()
+        else:
+            print("Action inconnue pour le moment:",action)
 
 
 
@@ -54,6 +90,7 @@ class NetworkEngine:
         self.gameEngine = gameEngine
         self.name = f"PL-{uuid.uuid1().hex[:10]}"
         self.size = size
+        self.MAXSIZE = 2048
 
     def create_socket(self):
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -68,7 +105,7 @@ class NetworkEngine:
 
     def recvMessage(self):
         try:
-            data,addr = self.socket.recvfrom(1024)
+            data,addr = self.socket.recvfrom(self.MAXSIZE)
             return data
         except BlockingIOError as e:
             raise BlockingIOError
@@ -113,7 +150,7 @@ class NetworkEngine:
         self.send_message(f"AskSize;;")
 
     def send_size (self,size):
-        self.send_message(f"SendSize;0;{size}")
+        self.send_message(f"SizeIS;{self.name};{size}")
     
     def wait_size (self,t):
         now = time.time()
@@ -124,7 +161,7 @@ class NetworkEngine:
                 message = message.decode('utf-8')
                 action, id, data = message.split(";")
                 if action == "SendSize":
-                    return ptuple_to_tuple(data)
+                    return MessageDecoder.ptuple_to_tuple(data)
 
 
             except BlockingIOError:
@@ -134,7 +171,7 @@ class NetworkEngine:
 
 if __name__ == "__main__":
     print(tuple("(30.5,30.5)".split(",")))
-    print(ptuple_to_tuple("(30.5,30.5)"))
+    print(MessageDecoder.ptuple_to_tuple("(30.5,30.5)"))
     #create_message("SetUnit",id,(x,y,player,map))
     #create_message("SetUnit",3,(32,32,2))
     #Unit.spawn_unit(Villager,float(position[0]),float(position[1]),self.players[0],self.map)
