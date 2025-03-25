@@ -144,16 +144,15 @@ class Building:
 
     @classmethod
     def spawn_building(self, player, x, y, building_class, game_map):
-        """if not game_map.is_area_free(x, y, building_class(player).size):
+        '''if not game_map.is_area_free(x, y, building_class(player).size):
             debug_print(f"Cannot spawn building at ({x}, {y}): area is not free.", 'Yellow')
-            return False"""
+            return False'''
         building = building_class(player)
         building.position = (x, y)
         game_map.place_building(x, y, building)  # Use the passed map instead of cls.map
         player.buildings.append(building)  # Add the building to the player's list of buildings
         #debug_print(f"Building {building.name} belonging to {player.name} at ({x}, {y}) spawned.")
         return building
-
 
 
     @classmethod

@@ -173,6 +173,7 @@ class GameEngine:
                     print("problèmes lecture classe batiment:",string)
                     return
                 newbuild = Building.spawn_building(player,int(data[2]),int(data[3]),this_class,self.map)
+                newbuild = Building.spawn_building(player,int(data[2]),int(data[3]),this_class,self.map)
                 newbuild.id = int(id)
                 print(newbuild.id)
 
@@ -196,6 +197,7 @@ class GameEngine:
                 else:
                     print("problèmes lecture classe batiment:",string)
                     return
+                newbuild = Building.spawn_building(player,int(data[2]),int(data[3]),this_class,self.map)
                 newbuild = Building.spawn_building(player,int(data[2]),int(data[3]),this_class,self.map)
                 newbuild.id = int(id)
                 print(newbuild.id)
@@ -461,10 +463,6 @@ class GameEngine:
                                     self.networkEngine.send_message(message)
                                     building.sent_count -= 1
                                     print(message)
-                                """elif building.name!="Construct": #Renvoie le batiment tous les cents tours 
-                                    building.sent_count-=1
-                                    if building.sent_count<-100:
-                                        building.sent_count = 5"""
 
                                 if hasattr(building, 'training_queue') and building.training_queue != []:
                                     unit = building.training_queue[0]
