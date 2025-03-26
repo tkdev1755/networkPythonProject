@@ -20,40 +20,6 @@ void closeAll(int *tab, int number_of_socket) {
     }
 }
 
-// int udpclient(struct sockaddr_in *server_sa, int port, char * ip) {
-//     #ifdef _WIN32
-//     // Initialiser Winsock si pas déjà fait
-//     static int winsock_initialized = 0;
-//     if (!winsock_initialized) {
-//         WSADATA wsaData;
-//         if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0) {
-//             stop("WSAStartup failed");
-//         }
-//         winsock_initialized = 1;
-//     }
-//     SOCKET socketfd = socket(AF_INET, SOCK_DGRAM, 0);
-//     if(socketfd == INVALID_SOCKET) {
-//         stop("Socket creation failed!");
-//     }
-//     #else
-//     int socketfd = socket(AF_INET, SOCK_DGRAM, 0);
-//     if(socketfd < 0) {
-//         stop("Socket creation failed!");
-//     }
-//     #endif
-
-//     if(ip == NULL) {
-//         stop("IP adress is null!");
-//     }
-
-//     memset(server_sa, 0, sizeof(struct sockaddr_in));
-//     server_sa->sin_family = AF_INET;
-//     server_sa->sin_port = htons(port);
-//     server_sa->sin_addr.s_addr = inet_addr(ip);
-
-//     return socketfd;
-// }
-
 int udpserver(struct sockaddr_in *server_sa, int port, char * ip) {
     #ifdef _WIN32
     // Initialise Winsock if not done
@@ -199,6 +165,7 @@ char * getip(const char * interface_name, char * ip) {
     }
 
     freeifaddrs(ifaddr);
+    ip = NULL;
     return NULL;  // interface not found
     #endif
 }
