@@ -20,43 +20,9 @@ void closeAll(int *tab, int number_of_socket) {
     }
 }
 
-int udpclient(struct sockaddr_in *server_sa, int port, char * ip) {
-    #ifdef _WIN32
-    // Initialiser Winsock si pas déjà fait
-    static int winsock_initialized = 0;
-    if (!winsock_initialized) {
-        WSADATA wsaData;
-        if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0) {
-            stop("WSAStartup failed");
-        }
-        winsock_initialized = 1;
-    }
-    SOCKET socketfd = socket(AF_INET, SOCK_DGRAM, 0);
-    if(socketfd == INVALID_SOCKET) {
-        stop("Socket creation failed!");
-    }
-    #else
-    int socketfd = socket(AF_INET, SOCK_DGRAM, 0);
-    if(socketfd < 0) {
-        stop("Socket creation failed!");
-    }
-    #endif
-
-    if(ip == NULL) {
-        stop("IP adress is null!");
-    }
-
-    memset(server_sa, 0, sizeof(struct sockaddr_in));
-    server_sa->sin_family = AF_INET;
-    server_sa->sin_port = htons(port);
-    server_sa->sin_addr.s_addr = inet_addr(ip);
-
-    return socketfd;
-}
-
 int udpserver(struct sockaddr_in *server_sa, int port, char * ip) {
     #ifdef _WIN32
-    // Initialiser Winsock si pas déjà fait
+    
     static int winsock_initialized = 0;
     if (!winsock_initialized) {
         WSADATA wsaData;
@@ -97,7 +63,7 @@ int udpserver(struct sockaddr_in *server_sa, int port, char * ip) {
 }
 
 #ifdef _WIN64
-// Fonction pour convertir une chaîne char* en wchar_t*
+
 wchar_t* charToWChar(const char* text) {
     size_t size = strlen(text) + 1;
     wchar_t* wText = malloc(size * sizeof(wchar_t));
@@ -113,22 +79,19 @@ char * getip(const char * interface_name, char * ip) {
     DWORD dwRetVal = 0;
     int interface_found = 0;
 
-    // Variables pour stocker les informations des adaptateurs
     PIP_ADAPTER_ADDRESSES pAddresses = NULL;
     PIP_ADAPTER_ADDRESSES pCurrAddresses = NULL;
     PIP_ADAPTER_UNICAST_ADDRESS pUnicast = NULL;
 
-    // Première appel pour obtenir la taille du buffer nécessaire
     GetAdaptersAddresses(AF_INET, GAA_FLAG_INCLUDE_PREFIX, NULL, NULL, &ulOutBufLen);
     
-    // Allouer le buffer avec la taille obtenue
     pAddresses = (IP_ADAPTER_ADDRESSES*) malloc(ulOutBufLen);
     if (pAddresses == NULL) {
         printf("Erreur d'allocation de mémoire.\n");
+        ip = NULL;
         return NULL;
     }
 
-    // Obtenir les informations des adaptateurs
     dwRetVal = GetAdaptersAddresses(AF_INET, GAA_FLAG_INCLUDE_PREFIX, NULL, pAddresses, &ulOutBufLen);
     
     if (dwRetVal == NO_ERROR) {
@@ -138,7 +101,6 @@ char * getip(const char * interface_name, char * ip) {
             // Check whether the interface name matches
             if (wcscmp(pCurrAddresses->FriendlyName, wInterfaceName) == 0) {
                 interface_found = 1;
-                printf("\nInformations pour l'interface: %ls\n", pCurrAddresses->FriendlyName);
                 
                 pUnicast = pCurrAddresses->FirstUnicastAddress;
                 if (pUnicast == NULL) {
@@ -167,13 +129,12 @@ char * getip(const char * interface_name, char * ip) {
         printf("Erreur lors de l'appel à GetAdaptersAddresses: %d\n", dwRetVal);
     }
     
-    // Libérer la mémoire
     if (pAddresses) {
         free(pAddresses);
     }
     
     #else
-    // Implémentation Linux originale
+    // For linux
     struct ifaddrs *ifaddr, *ifa;
 
     // gathering @ip
@@ -189,13 +150,14 @@ char * getip(const char * interface_name, char * ip) {
             struct sockaddr_in *sa = (struct sockaddr_in *)ifa->ifa_addr;
             inet_ntop(AF_INET, &(sa->sin_addr), ip, INET_ADDRSTRLEN);
             // freeifaddrs(ifaddr);
-            break;
-            // return ip;
+            return ip;
+            // break;
         }
         // printf("My ip address :%s\n", );
     }
 
     freeifaddrs(ifaddr);
+    ip = NULL;
     return NULL;  // interface not found
     #endif
 }
@@ -220,7 +182,7 @@ void catch(void) {
 }
 
 int broadcast_sending(int udpserverfd, char * message, int len) {
-    // this code is written by Christian Toinard : christian.toinard(at)insa-cvl.fr
+    //A part of this code is written by Christian Toinard : christian.toinard(at)insa-cvl.fr
     // #define Message "Bonjour de Christian Toinard"
 
     #ifdef _WIN32
@@ -231,7 +193,7 @@ int broadcast_sending(int udpserverfd, char * message, int len) {
     #endif
 
     #ifdef _WIN32
-    // Implémentation Windows du broadcast
+    
     BOOL bOptVal = TRUE;
     int bOptLen = sizeof(BOOL);
     
@@ -240,7 +202,6 @@ int broadcast_sending(int udpserverfd, char * message, int len) {
         stop("setsockopt failed, and broadcasting failed: ");
     }
     
-    // Obtenir la liste des interfaces réseau
     PMIB_IPADDRTABLE pIPAddrTable;
     DWORD dwSize = 0;
     DWORD dwRetVal = 0;
@@ -251,7 +212,6 @@ int broadcast_sending(int udpserverfd, char * message, int len) {
         stop("Memory allocation failed for GetIpAddrTable");
     }
     
-    // Faire un premier appel pour obtenir la taille nécessaire
     if (GetIpAddrTable(pIPAddrTable, &dwSize, 0) == ERROR_INSUFFICIENT_BUFFER) {
         free(pIPAddrTable);
         pIPAddrTable = (MIB_IPADDRTABLE *) malloc(dwSize);
@@ -260,7 +220,6 @@ int broadcast_sending(int udpserverfd, char * message, int len) {
         }
     }
     
-    // Obtenir la table d'adresses IP
     if ((dwRetVal = GetIpAddrTable(pIPAddrTable, &dwSize, 0)) == NO_ERROR) {
         for (int i = 0; i < (int) pIPAddrTable->dwNumEntries; i++) {
             // Calculer l'adresse de broadcast pour chaque interface
@@ -279,7 +238,7 @@ int broadcast_sending(int udpserverfd, char * message, int len) {
     free(pIPAddrTable);
     
     #else
-    // Implémentation Linux originale
+
     char buffer[BUFFER_SIZE];
     struct ifconf ifc;
     ifc.ifc_len = sizeof(buffer);

@@ -8,9 +8,9 @@
 #define LOCALHOSTIP "127.0.0.1"
 #define INTERFACE_NAME "Wi-Fi"
 
-// Détection du système d'exploitation
+// OS Detection
 #if defined(_WIN32) || defined(_WIN64) || defined(WIN32)
-// Inclusions Windows
+// Windows includes
 #include <winsock2.h>
 #include <ws2tcpip.h>
 #include <windows.h>
@@ -21,7 +21,7 @@ typedef int socklen_t;
 #define bzero(b,len) (memset((b), '\0', (len)), (void) 0)
 #define close(s) closesocket(s)
 #else
-// Inclusions Linux/UNIX
+// Includes for Linux
 #include <sys/socket.h>
 #include <sys/select.h>
 #include <netinet/in.h>
@@ -33,7 +33,7 @@ typedef int socklen_t;
 #include <sys/types.h>
 #endif
 
-// Inclusions communes
+// Common Includes 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -41,10 +41,10 @@ typedef int socklen_t;
 #include <signal.h>
 
 #ifdef _WIN32
-// Pour Windows
+
     #define SOCKET_ERROR_CODE WSAGetLastError()
 #else
-    // Pour Linux/UNIX
+    
     #include <unistd.h>
     #include <strings.h>
     #define SOCKET_ERROR_CODE errno
@@ -59,22 +59,19 @@ struct networkStruct {
 };
 typedef struct networkStruct networkStruct;
 
-// Initialisation de Winsock pour Windows
 #ifdef _WIN32
 static int initializeWinsock() {
     WSADATA wsaData;
     return WSAStartup(MAKEWORD(2, 2), &wsaData);
 }
 
-// Nettoyage de Winsock
 static void cleanupWinsock() {
     WSACleanup();
 }
 #endif
 
 int udpserver(struct sockaddr_in * server_sa, int port, char * ip);
-int udpclient(struct sockaddr_in * server_sa, int port, char * ip);
-// char * getip(const char * interface);
+
 char * getip(const char * interface_name, char * ip);
 int broadcast_sending(int udpserverfd, char * message, int len);
 
