@@ -216,18 +216,21 @@ class GameEngine:
                 return
         self.debug_print(f"--------- [SBID END] -------")
 
-    def set_resource_by_position(self,id,data): #action,id,(x,y,ressource,amount) ,self.map.grid[y][x] pour avoir la tuile, 
+    def set_resource_by_position(self,id,data,override=False): #action,id,(x,y,ressource,amount) ,self.map.grid[y][x] pour avoir la tuile,
         x,y = int(data[0]),int(data[1])
         amount = float(data[3])
-        string = data[2][2:-1]
+        string = data[2][2:-1] if not override else data[2]
+        print("STRING IS ",  string)
         if string == 'None':
             self.map.grid[y][x].resource = None
         elif string == 'Wood':
+            print("On m'as demandé de poser duWOOOOD")
             self.map.grid[y][x].resource = Wood()
             self.map.grid[y][x].resource.type = "Wood"
             self.map.grid[y][x].resource.amount = amount
             self.map.resources["Wood"].append((x, y))
         elif data[2] == "Gold":
+            print("On m'as demandé de poser duGOLDD")
             self.map.grid[y][x].resource = Gold()
             self.map.grid[y][x].resource.type = "Gold"
             self.map.grid[y][x].resource.amount = amount
@@ -267,7 +270,23 @@ class GameEngine:
                 player.population += 1
                 self.map.place_unit(int(pos[0]), int(pos[1]), unit)
                 return unit
+    def createResource(self, type,amount,position):
+        print(f"Adding {amount} {type} in {position}")
+        if type == "Wood":
+            self.set_resource_by_position(position,(position[0],position[1],f'Wood',amount),override=True)
+            '''resource = Wood()
+            resource.amount = amount
+            self.map.grid[position[0]][position[1]].resource = resource
+            self.map.resources["Wood"].append(position)'''
+        elif type == "Gold":
+            self.set_resource_by_position(position,(position[0],position[1],f'Gold',amount),override=True)
 
+            '''resource = Gold()
+            resource.amount = amount
+            self.map.grid[position[0]][position[1]].resource = resource
+            self.map.resources["Gold"].append(position)'''
+        else:
+            self.debug_print("Tried to add a type which is not known by the game")
     def initDummyPlayers(self):
         for i in range(3):
             pl = Player(f"Dumb Player {i+2}", "Leans", "Aggressive", i+2)
@@ -283,9 +302,11 @@ class GameEngine:
         self.initNetworkEngine()
         self.initMessageDecoder()
         self.initDummyPlayers()
+        self.networkEngine.initInventory(not self.joinNetworkGame)
         self.players[0].netName = self.networkEngine.name # par définition le player 1 est le joueur local
         stdscr.clear()  # Clear the screen
-
+        if self.joinNetworkGame:
+            self.networkEngine.askForOwnedTiles()
         if self.terminalon :
             self.map.display_viewport(stdscr, top_left_x, top_left_y, viewport_width, viewport_height, Map_is_paused=self.is_paused)  # Display the initial viewport
 
@@ -399,14 +420,7 @@ class GameEngine:
                 #message = create_message("SetUnit",3,(32,32,2))
                 #self.interpret_message(message)
             
-                try:
-                    data= self.networkEngine.recvMessage()
-                    print("received message: %s" % data)
-                    self.messageDecoder.interpret_message(data.decode('utf-8'))
-                except BlockingIOError:
-                    pass
-                except ConnectionResetError:
-                    pass
+
                 """ except Exception as e:
                     print("Exception lors de la réception d'une data ! : ",e)
                     raise Exception("Problems")"""
@@ -424,9 +438,16 @@ class GameEngine:
                         ia.current_time_called = self.get_current_time()  # Update the current time for each IA
                         ia.run()
                         if ia.noActionsToDo:
-                            randomTile = (random.randint(0,self.map_size[0]), random.randint(0,self.map_size[1]))
-                            self.debug_print(f"AI Has nothing to do so we need to ask for a random tile on the map, position is {randomTile}")
-                            #self.networkEngine.askForProperty(randomTile)
+                            #randomTile = (random.randint(0,self.map_size[0]), random.randint(0,self.map_size[1]))
+                            self.debug_print(f"AI Has nothing to do so we need to ask for a resource tile")
+                            if self.networkEngine.ableToAsk:
+                                print("Asking for property because i'm able to do so")
+                                self.networkEngine.getRTile()
+                                self.networkEngine.timeSinceLastQ = time.time()
+                            else:
+                                if time.time().real - self.networkEngine.timeSinceLastQ.real > 10:
+                                    print("TIMEOUT - STOPPING FROM WAITING FOR A RESPONSE, GOING OVER THIS")
+                                    self.networkEngine.updateAskStatus()
 
 
                 if not self.is_paused and self.turn % 10 == 0:
@@ -440,42 +461,81 @@ class GameEngine:
                                 #    action._attack(unit, unit.target_attack, self.get_current_time())
                                 elif unit.target_position:
                                     target_x, target_y = unit.target_position
-                                    action.move_unit(unit, target_x, target_y, self.get_current_time())
-                                    #envoyer "Set;ID;Data" pour indiquer le nouvel emplacement
-                                    message=MessageDecoder.create_message("SetUnit", unit.id, (unit.position[0],unit.position[1],player.netName))
-                                    self.networkEngine.send_message(message)
-                                    print(message)
+                                    if unit.path:
+                                        nextTile = unit.path[0]
+                                        if self.networkEngine.isOwner(nextTile):
+                                            self.debug_print(f"[GAMEENGINE] Seems to be the the owner of this tile----->{nextTile}")
+                                            action.move_unit(unit, target_x, target_y, self.get_current_time())
+                                            self.debug_print(f"[GAMEENGINE] got to the tile----->{nextTile}")
+                                        else:
+                                            self.debug_print(f"[GAMEENGINE] Not the owner of this tile----->{nextTile}")
+                                            if self.networkEngine.ableToAsk:
+                                                self.debug_print(f"[GAMEENGINE] Asking for tile bc not the owner ----->{nextTile}")
+                                                self.networkEngine.askForProperty(nextTile,nextTile,"Tile")
+                                                delta = time.time().real - self.networkEngine.timeSinceLastQ.real
+                                                if delta > 10:
+                                                    self.debug_print("TIMEOUT WHEN ASKING FOR SOMETHING PASSED")
+                                                    self.networkEngine.updateAskStatus()
+                                    elif len(unit.path)==1:
+                                        self.debug_print("[GAMEENGINE] One step top go before finishing the chemin")
+                                    else:
+                                        self.debug_print(f"[GAMEENGINE] No path so got to the destination i Guess")
+                                        action.move_unit(unit, target_x, target_y, self.get_current_time())                                    #envoyer "Set;ID;Data" pour indiquer le nouvel emplacement
+                                    #message=MessageDecoder.create_message("SetUnit", unit.id, (unit.position[0],unit.position[1],player.netName))
+                                    #self.networkEngine.send_message(message)
+                                    #print(message)
                                 elif unit.task == "gathering" or unit.task == "returning":
                                     x,y = unit.target_resource #target_resource est une position, ligne ajoutée par moi
-                                    action._gather(unit, unit.last_gathered, self.get_current_time())
+                                    if unit.task == "returning":
+                                        pass
+                                        self.debug_print("Should be going back at any moment")
+                                        #x,y = unit.target_position
+                                        action._gather(unit, unit.last_gathered, self.get_current_time())
+                                    else:
+                                        if self.networkEngine.isOwner((x,y)):
+                                            action._gather(unit, unit.last_gathered, self.get_current_time())
+                                        else:
+                                            self.debug_print(f"Gather !! We need to ask the property for this tile {(x,y)}")
+                                            self.networkEngine.askForProperty((x,y),(x,y),"Tile")
                                     #envoyer "SetResource;ID;Data" pour indiquer l'état de la ressource, data=(x,y,ressource,amount)
                                     this_tile = self.map.grid[y][x]
                                     if this_tile.resource == None:
-                                        message= MessageDecoder.create_message("SetResource",this_tile.id,(x,y,"None",0))
+                                        self.debug_print("COLLECTING A RESOURCE WHEN THERE IS NO MORE ???")
+                                        # Tout les messages sont bloqué car nous sommes dans la version cohérente
+                                        pass
+                                        #message= MessageDecoder.create_message("SetResource",this_tile.id,(x,y,"None",0))
                                     else:
-                                        message= MessageDecoder.create_message("SetResource",this_tile.id,(x,y,this_tile.resource.type,this_tile.resource.amount))
-                                    self.networkEngine.send_message(message) # Remplace le send_message(message, self.networkEngine.socket)
-                                    print(message)
+                                        pass
+                                        #message= MessageDecoder.create_message("SetResource",this_tile.id,(x,y,this_tile.resource.type,this_tile.resource.amount))
+                                    #self.networkEngine.send_message(message) # Remplace le send_message(message, self.networkEngine.socket)
+                                    #print(message)
                                 elif unit.task == "marching":
                                     x,y = unit.target_resource #target_resource est une position, ligne ajoutée par moi
                                     action.gather_resources(unit, unit.last_gathered, self.get_current_time())
                                     #envoyer "SetResource;ID;Data" pour indiquer l'état de la ressource, data=(x,y,ressource,amount)
                                     this_tile = self.map.grid[y][x]
                                     if this_tile.resource == None:
-                                        message= MessageDecoder.create_message("SetResource",this_tile.id,(x,y,"None",0))
+                                        pass
+                                        #message= MessageDecoder.create_message("SetResource",this_tile.id,(x,y,"None",0))
                                     else:
-                                        message= MessageDecoder.create_message("SetResource",this_tile.id,(x,y,this_tile.resource.type,this_tile.resource.amount))
-                                    self.networkEngine.send_message(message) # Remplace le send_message(message, self.networkEngine.socket)
-                                    print(message)
+                                        pass
+                                        #message= MessageDecoder.create_message("SetResource",this_tile.id,(x,y,this_tile.resource.type,this_tile.resource.amount))
+                                    #self.networkEngine.send_message(message) # Remplace le send_message(message, self.networkEngine.socket)
+                                    #print(message)
                                 elif unit.task == "is_attacked":
                                     action._attack(unit, unit.is_attacked_by, self.get_current_time())
                                 elif unit.task == "going_to_construction_site":
-                                    action.construct_building(unit, unit.construction_type, unit.target_building[0], unit.target_building[1], player, self.get_current_time())
+                                    if self.networkEngine.isOwner((unit.target_building[0],unit.target_building[1])):
+                                        action.construct_building(unit, unit.construction_type, unit.target_building[0], unit.target_building[1], player, self.get_current_time())
+                                    else:
+                                        targetPosition = (unit.target_building[0],unit.target_building[1])
+                                        self.networkEngine.askForProperty(targetPosition,targetPosition,"Tile")
                                 elif unit.task == "constructing":
                                     action._construct(unit, unit.construction_type, unit.target_building[0], unit.target_building[1], player, self.get_current_time())
                             for building in player.buildings:
                                 #envoie le building pendant dix tours à la fabrication
                                 if building.sent_count and building.name!="Construct": #action,id,(player.id,name,x,y)
+                                    pass
                                     message= MessageDecoder.create_message("SetBuilding", building.id, (building.player.netName,building.name,building.position[0],building.position[1]))
                                     self.networkEngine.send_message(message)
                                     building.sent_count -= 1
@@ -494,6 +554,14 @@ class GameEngine:
                                         building.target = None"""
 
                 # Clear the screen and display the new part of the map after moving
+                try:
+                    data= self.networkEngine.recvMessage()
+                    print("received message: %s" % data)
+                    self.messageDecoder.interpret_message(data.decode('utf-8'))
+                except BlockingIOError:
+                    pass
+                except ConnectionResetError:
+                    pass
                 stdscr.clear()
                 if self.terminalon :
                     self.map.display_viewport(stdscr, top_left_x, top_left_y, viewport_width, viewport_height, Map_is_paused=self.is_paused)

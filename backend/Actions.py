@@ -133,7 +133,7 @@ class Action:
             # Update the last move time
             unit.last_move_time = current_time
             Map.move_unit(self.map, unit, int(unit.position[0]), int(unit.position[1]), int(start_x), int(start_y))
-
+            self.debug_print("[ACTION_MOVE] Unit moved successfully")
             return True
 
         return False
@@ -326,6 +326,7 @@ class Action:
             return False
 
     def _gather(self, unit, resource_type, current_time_called):
+        self.debug_print("------------------------DEBUT GATHER !!!-------------------")
         unit.is_moving = False
         tile = self.map.grid[unit.target_resource[1]][unit.target_resource[0]] if unit.target_resource is not None else None
         
@@ -372,6 +373,7 @@ class Action:
         
         # Check if unit's carrying capacity is full or if it needs to return due to lack of resource
         if unit.carrying[resource_type] >= unit.carry_capacity or unit.task == "returning":
+            self.debug_print("Unit needs to get back to dropPoint")
             unit.task = "returning"
             # Locate the nearest drop-off location (Town Center or Camp)
             if resource_type == "Food" and tile.building:
@@ -398,7 +400,7 @@ class Action:
                     if surrounding_tiles:
                         new_position = surrounding_tiles[0]  # Choose the first accessible tile
                         self.move_unit(unit, new_position[0], new_position[1], current_time_called)
-
+                        self.debug_print(f"[ACTIONS_GATHER] Should now be going to -----> {new_position}")
                         # Check if unit has reached the drop-off destination to deposit resources
                         if abs(unit.position[0] - new_position[0]) < 1.01 and abs(unit.position[1] - new_position[1]) < 1.01:
                             # Deposit resources and reset carrying load
@@ -419,6 +421,7 @@ class Action:
             else:
                 self.debug_print("No valid building found for resource return.", 'Yellow')
                 unit.task = None
+        self.debug_print("------------------------FIN GATHER !!!-------------------")
 
     def go_battle(self, unit, enemy_unit, current_time_called):
         if not enemy_unit:

@@ -167,7 +167,12 @@ class Building:
         else:
             debug_print(f"Building {building_to_kill} does not belong to {player.name}.", 'Yellow')
 
-
+    def getAllTiles(self):
+        allTiles = []
+        for i in range(self.size):
+            for k in range(self.size):
+                allTiles.append((self.position[0]+k, self.position[1]+i))
+        return allTiles
 # TownCenter Class
 class TownCenter(Building):
     def __init__(self, player):

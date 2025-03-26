@@ -2,7 +2,7 @@
 class Player:
     def __init__(self, name, civilization, ai_profile, player_id, color=None):
         self.Means_starting_resources = {"Wood": 200, "Food": 50, "Gold": 50}
-        self.Leans_starting_resources = {"Wood": 2000, "Food": 2000, "Gold": 2000}
+        self.Leans_starting_resources = {"Wood": 0, "Food": 0, "Gold": 0}
         self.Marines_starting_resources = {"Wood": 20000, "Food": 20000, "Gold": 20000}
         self.name = name
         self.civilization = civilization
