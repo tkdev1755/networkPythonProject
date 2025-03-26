@@ -24,6 +24,8 @@ python3 backend/main.py
 ```
 
 After that, you can compile and execute le networkEngine.c file with this command :
+Make sure that you have changed your network interface name in the network/includes/network.h file, the constant name is INTERFACE_NAME
+
 In a Windows OS
 ```
 gcc network/networkEngine.c network/includes/network.c -o networkEngine -lws2_32 -liphlpapi
