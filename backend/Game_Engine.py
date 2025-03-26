@@ -166,8 +166,8 @@ class GameEngine:
                     if building.id == elementID :
                         return #building aleady exists
                 self.debug_print("New building to spawn")
-                if string == "TownCenter":
-                    this_class=Keep
+                if string == "Town Center":
+                    this_class=TownCenter
                 elif string == "House":
                     this_class=House
                 elif string == "Camp":
@@ -192,8 +192,8 @@ class GameEngine:
             if player.netName is None:
                 self.debug_print(f"[SBID] New player going by the name of {netName} ! Registering it")
                 player.netName = netName
-                if string == "TownCenter":
-                    this_class=Keep
+                if string == "Town Center":
+                    this_class=TownCenter
                 elif string == "House":
                     this_class=House
                 elif string == "Camp":
